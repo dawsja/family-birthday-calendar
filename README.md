@@ -64,6 +64,64 @@ npm run start
 
 The backend serves the compiled frontend from `frontend/dist` when `NODE_ENV=production`.
 
+## Nginx Proxy Manager (recommended)
+
+Recommended production setup is a single Proxy Host that forwards the whole site to the backend:
+
+- Proxy Host `life.domingz.com` → `http://<server>:3001`
+
+This keeps the UI and API same-origin (`/api`), so cookies and CSRF work cleanly.
+
+## Nginx Proxy Manager (split frontend + backend, one domain)
+
+If you want the backend and frontend to run as separate processes/ports but still only expose **one** domain,
+configure Nginx Proxy Manager to route:
+
+- `/` → frontend server (serving `frontend/dist`)
+- `/api/` → backend server
+
+### Run (split)
+
+Build once:
+
+```bash
+npm run build
+```
+
+Then run both:
+
+```bash
+npm run start:split
+```
+
+Or with PM2 using the single entrypoint:
+
+```bash
+NODE_ENV=production FBC_SPLIT_FRONTEND=1 pm2 start sfdfd.js --name fbc
+```
+
+### NPM advanced config (single Proxy Host)
+
+Create one Proxy Host for `life.domingz.com` (forward host/port can be anything; it will be overridden by the locations),
+then paste this in **Advanced** (adjust host/IPs as needed):
+
+```nginx
+location /api/ {
+  proxy_pass http://127.0.0.1:3001;
+  proxy_set_header Host $host;
+  proxy_set_header X-Forwarded-Proto $scheme;
+  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+}
+
+location / {
+  proxy_pass http://127.0.0.1:5173;
+  proxy_http_version 1.1;
+  proxy_set_header Host $host;
+  proxy_set_header X-Forwarded-Proto $scheme;
+  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+}
+```
+
 ## PM2
 
 This repo includes `sfdfd.js` as a single PM2 entrypoint.
