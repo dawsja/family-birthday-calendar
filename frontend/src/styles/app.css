@@ -1,0 +1,73 @@
+@import "tailwindcss";
+
+:root {
+  --bg: 255 255 255;
+  --fg: 17 24 39;
+  --muted: 107 114 128;
+  --card: 255 255 255;
+  --border: 229 231 235;
+  --primary: 26 115 232; /* Google-ish blue */
+  --primary-foreground: 255 255 255;
+}
+
+.dark {
+  --bg: 15 16 18;
+  --fg: 229 231 235;
+  --muted: 156 163 175;
+  --card: 24 26 28;
+  --border: 55 65 81;
+  --primary: 138 180 248;
+  --primary-foreground: 0 0 0;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background: rgb(var(--bg));
+  color: rgb(var(--fg));
+}
+
+/* FullCalendar theming (keep close to Google Calendar). */
+.fc {
+  --fc-border-color: rgb(var(--border));
+  --fc-page-bg-color: rgb(var(--bg));
+  --fc-neutral-bg-color: rgb(var(--card));
+  --fc-today-bg-color: color-mix(in srgb, rgb(var(--primary)) 10%, transparent);
+  --fc-button-bg-color: rgb(var(--card));
+  --fc-button-border-color: rgb(var(--border));
+  --fc-button-text-color: rgb(var(--fg));
+  --fc-button-hover-bg-color: color-mix(in srgb, rgb(var(--card)) 85%, rgb(var(--fg)) 15%);
+  --fc-button-hover-border-color: rgb(var(--border));
+  --fc-button-active-bg-color: color-mix(in srgb, rgb(var(--primary)) 15%, rgb(var(--card)));
+  --fc-button-active-border-color: rgb(var(--border));
+}
+
+.fc .fc-toolbar-title {
+  font-size: 1.15rem;
+  font-weight: 600;
+}
+
+.fc .fc-daygrid-day-number {
+  padding: 6px;
+  font-size: 0.85rem;
+}
+
+.fc .fc-event {
+  border-radius: 8px;
+  border: 0;
+  padding: 2px 6px;
+}
+
+.fc .fc-event.bday {
+  background: color-mix(in srgb, rgb(var(--primary)) 85%, rgb(var(--bg)));
+  color: rgb(var(--primary-foreground));
+}
+
+.fc .fc-event.update {
+  background: color-mix(in srgb, rgb(var(--fg)) 10%, rgb(var(--card)));
+  color: rgb(var(--fg));
+}
+
