@@ -29,15 +29,20 @@ const VenmoSchema = z
 const CreateUserSchema = z.object({
   username: UsernameSchema,
   displayName: z.string().trim().min(1).max(80).optional(),
-  password: z.string().min(12).max(256),
+  password: z.string().min(12).max(256).optional(),
   role: z.enum(["user", "admin"]).optional()
 });
+
+const CreateUserSchemaRefined = CreateUserSchema.refine(
+  (v) => (v.role ?? "user") !== "admin" || !!v.password,
+  "admin_requires_password"
+);
 
 router.get("/users", requireAuth, requireAdmin, (req, res) => {
   const db = getDb();
   const users = db
     .prepare(
-      `SELECT id, username, display_name, role, created_at, last_login_at, birthday, venmo
+      `SELECT id, username, display_name, role, created_at, last_login_at, birthday, venmo, must_set_password
        FROM users
        ORDER BY created_at ASC`
     )
@@ -50,31 +55,35 @@ router.get("/users", requireAuth, requireAdmin, (req, res) => {
       createdAt: u.created_at,
       lastLoginAt: u.last_login_at,
       birthday: u.birthday,
-      venmo: u.venmo
+      venmo: u.venmo,
+      mustSetPassword: !!u.must_set_password
     }));
   return res.json({ users });
 });
 
 router.post("/users", requireAuth, requireAdmin, async (req, res) => {
-  const parsed = CreateUserSchema.safeParse(req.body);
+  const parsed = CreateUserSchemaRefined.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: "invalid_request" });
 
   const db = getDb();
   const id = nanoid();
-  const passwordHash = await argon2.hash(parsed.data.password, {
-    type: argon2.argon2id
-  });
+  const role = parsed.data.role ?? "user";
+  const passwordHash = parsed.data.password
+    ? await argon2.hash(parsed.data.password, { type: argon2.argon2id })
+    : null;
+  const mustSetPassword = passwordHash ? 0 : 1;
 
   try {
     db.prepare(
-      `INSERT INTO users (id, username, display_name, password_hash, role, created_at)
-       VALUES (@id, @username, @display_name, @password_hash, @role, @created_at)`
+      `INSERT INTO users (id, username, display_name, password_hash, must_set_password, role, created_at)
+       VALUES (@id, @username, @display_name, @password_hash, @must_set_password, @role, @created_at)`
     ).run({
       id,
       username: parsed.data.username,
       display_name: parsed.data.displayName ?? null,
       password_hash: passwordHash,
-      role: parsed.data.role ?? "user",
+      must_set_password: mustSetPassword,
+      role,
       created_at: Date.now()
     });
   } catch (e: any) {
@@ -238,8 +247,12 @@ router.post("/users/:id/reset-password", requireAuth, requireAdmin, async (req, 
     type: argon2.argon2id
   });
 
-  db.prepare("UPDATE users SET password_hash = ? WHERE id = ?").run(passwordHash, userId);
+  db.prepare("UPDATE users SET password_hash = ?, must_set_password = 0 WHERE id = ?").run(
+    passwordHash,
+    userId
+  );
   db.prepare("DELETE FROM sessions WHERE user_id = ?").run(userId); // revoke sessions
+  db.prepare("DELETE FROM password_set_tokens WHERE user_id = ?").run(userId);
 
   return res.json({ ok: true });
 });

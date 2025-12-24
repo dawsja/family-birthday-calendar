@@ -25,7 +25,8 @@ export function getDb(): Database.Database {
       id TEXT PRIMARY KEY,
       username TEXT NOT NULL UNIQUE,
       display_name TEXT,
-      password_hash TEXT NOT NULL,
+      password_hash TEXT,
+      must_set_password INTEGER NOT NULL DEFAULT 0,
       role TEXT NOT NULL CHECK (role IN ('user','admin')) DEFAULT 'user',
       birthday TEXT,
       venmo TEXT,
@@ -44,6 +45,16 @@ export function getDb(): Database.Database {
     CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id);
     CREATE INDEX IF NOT EXISTS idx_sessions_expires_at ON sessions(expires_at);
 
+    CREATE TABLE IF NOT EXISTS password_set_tokens (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      created_at INTEGER NOT NULL,
+      expires_at INTEGER NOT NULL,
+      FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+    CREATE INDEX IF NOT EXISTS idx_password_set_tokens_user_id ON password_set_tokens(user_id);
+    CREATE INDEX IF NOT EXISTS idx_password_set_tokens_expires_at ON password_set_tokens(expires_at);
+
     CREATE TABLE IF NOT EXISTS updates (
       id TEXT PRIMARY KEY,
       user_id TEXT NOT NULL,
@@ -61,6 +72,42 @@ export function getDb(): Database.Database {
 
   // Lightweight migrations for existing DB files.
   // (SQLite doesn't support "ADD COLUMN IF NOT EXISTS".)
+  const usersCols = instance
+    .prepare(`PRAGMA table_info(users)`)
+    .all() as Array<{ name: string; notnull: number }>;
+  const hasMustSetPassword = usersCols.some((c) => c.name === "must_set_password");
+  const passwordHashCol = usersCols.find((c) => c.name === "password_hash");
+  const passwordHashWasNotNull = passwordHashCol ? passwordHashCol.notnull === 1 : false;
+  if (!hasMustSetPassword || passwordHashWasNotNull) {
+    // Migrate users table to allow NULL password hashes (for first-login password setup)
+    // and to track must_set_password explicitly.
+    //
+    // This rebuild avoids SQLite's lack of "ALTER COLUMN".
+    instance.exec(`
+      PRAGMA foreign_keys=OFF;
+      BEGIN;
+      CREATE TABLE IF NOT EXISTS users_new (
+        id TEXT PRIMARY KEY,
+        username TEXT NOT NULL UNIQUE,
+        display_name TEXT,
+        password_hash TEXT,
+        must_set_password INTEGER NOT NULL DEFAULT 0,
+        role TEXT NOT NULL CHECK (role IN ('user','admin')) DEFAULT 'user',
+        birthday TEXT,
+        venmo TEXT,
+        created_at INTEGER NOT NULL,
+        last_login_at INTEGER
+      );
+      INSERT INTO users_new (id, username, display_name, password_hash, role, birthday, venmo, created_at, last_login_at, must_set_password)
+      SELECT id, username, display_name, password_hash, role, birthday, venmo, created_at, last_login_at, 0
+      FROM users;
+      DROP TABLE users;
+      ALTER TABLE users_new RENAME TO users;
+      COMMIT;
+      PRAGMA foreign_keys=ON;
+    `);
+  }
+
   const updatesCols = instance
     .prepare(`PRAGMA table_info(updates)`)
     .all() as Array<{ name: string }>;
@@ -69,7 +116,9 @@ export function getDb(): Database.Database {
   }
 
   // Opportunistic cleanup (keeps the sessions table from growing forever).
-  instance.prepare("DELETE FROM sessions WHERE expires_at <= ?").run(Date.now());
+  const now = Date.now();
+  instance.prepare("DELETE FROM sessions WHERE expires_at <= ?").run(now);
+  instance.prepare("DELETE FROM password_set_tokens WHERE expires_at <= ?").run(now);
 
   bootstrapAdminIfNeeded(instance).catch((err) => {
     // eslint-disable-next-line no-console
@@ -98,8 +147,8 @@ async function bootstrapAdminIfNeeded(instance: Database.Database) {
 
   instance
     .prepare(
-      `INSERT INTO users (id, username, display_name, password_hash, role, created_at)
-       VALUES (@id, @username, @display_name, @password_hash, 'admin', @created_at)`
+      `INSERT INTO users (id, username, display_name, password_hash, must_set_password, role, created_at)
+       VALUES (@id, @username, @display_name, @password_hash, 0, 'admin', @created_at)`
     )
     .run({
       id,
