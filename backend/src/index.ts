@@ -112,7 +112,9 @@ if (env.NODE_ENV === "production") {
   const indexHtml = path.join(distDir, "index.html");
   if (fs.existsSync(indexHtml)) {
     app.use(express.static(distDir, { index: false, maxAge: "1h" }));
-    app.get("*", (_req, res) => res.sendFile(indexHtml));
+    // Express v5 uses a newer path-to-regexp which doesn't accept "*" as a path string.
+    // Use a RegExp catch-all for SPA routing.
+    app.get(/.*/, (_req, res) => res.sendFile(indexHtml));
   }
 }
 
