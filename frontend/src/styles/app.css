@@ -71,3 +71,24 @@ body {
   color: rgb(var(--fg));
 }
 
+/* Mobile tweaks: avoid horizontal overflow and improve readability. */
+@media (max-width: 640px) {
+  .fc .fc-toolbar-title {
+    font-size: 1rem;
+  }
+
+  /* FullCalendar list view can create wide rows; allow wrapping. */
+  .fc .fc-list-table {
+    width: 100%;
+  }
+
+  .fc .fc-list-event-title,
+  .fc .fc-list-event-title a {
+    white-space: normal;
+  }
+
+  .fc .fc-list-event-title {
+    word-break: break-word;
+  }
+}
+

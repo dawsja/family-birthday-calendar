@@ -47,6 +47,7 @@ export default function CalendarPage() {
   const calRef = useRef<FullCalendar | null>(null);
 
   const initialView = useMemo(() => (isSmall ? "listWeek" : "dayGridMonth"), [isSmall]);
+  const addUpdateLabel = useMemo(() => (isSmall ? "+" : "+ Add Update"), [isSmall]);
 
   const [jumpYear, setJumpYear] = useState(() => new Date().getFullYear());
   const [jumpMonth, setJumpMonth] = useState(() => new Date().getMonth());
@@ -239,10 +240,10 @@ export default function CalendarPage() {
           </div>
         </div>
 
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-2 px-3 pb-2">
-          <div className="flex items-center gap-2">
+        <div className="mx-auto flex max-w-6xl flex-col gap-2 px-3 pb-2 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-wrap items-center gap-2">
             <button
-              className="rounded-full border border-[rgb(var(--border))] bg-[rgb(var(--card))] px-3 py-1.5 text-sm hover:bg-black/5 dark:hover:bg-white/5"
+              className="rounded-full border border-[rgb(var(--border))] bg-[rgb(var(--card))] px-2 py-1.5 text-sm hover:bg-black/5 dark:hover:bg-white/5 sm:px-3"
               type="button"
               onClick={() => calRef.current?.getApi().today()}
             >
@@ -250,7 +251,7 @@ export default function CalendarPage() {
             </button>
             <div className="flex items-center overflow-hidden rounded-full border border-[rgb(var(--border))] bg-[rgb(var(--card))]">
               <button
-                className="px-3 py-1.5 text-sm hover:bg-black/5 dark:hover:bg-white/5"
+                className="px-2 py-1.5 text-sm hover:bg-black/5 dark:hover:bg-white/5 sm:px-3"
                 type="button"
                 onClick={() => calRef.current?.getApi().prev()}
                 aria-label="Previous"
@@ -258,7 +259,7 @@ export default function CalendarPage() {
                 ‹
               </button>
               <button
-                className="px-3 py-1.5 text-sm hover:bg-black/5 dark:hover:bg-white/5"
+                className="px-2 py-1.5 text-sm hover:bg-black/5 dark:hover:bg-white/5 sm:px-3"
                 type="button"
                 onClick={() => calRef.current?.getApi().next()}
                 aria-label="Next"
@@ -267,7 +268,7 @@ export default function CalendarPage() {
               </button>
             </div>
 
-            <div className="flex items-center gap-2 rounded-full border border-[rgb(var(--border))] bg-[rgb(var(--card))] px-2 py-1">
+            <div className="flex w-full items-center justify-between gap-2 rounded-full border border-[rgb(var(--border))] bg-[rgb(var(--card))] px-2 py-1 sm:w-auto sm:justify-start">
               <select
                 className="bg-transparent text-xs sm:text-sm outline-none"
                 value={jumpYear}
@@ -335,11 +336,12 @@ export default function CalendarPage() {
           </div>
 
           <button
-            className="rounded-full bg-[rgb(var(--primary))] px-4 py-1.5 text-sm font-semibold text-[rgb(var(--primary-foreground))]"
+            className="grid h-9 w-9 place-items-center self-end rounded-full bg-[rgb(var(--primary))] text-sm font-semibold leading-none text-[rgb(var(--primary-foreground))] hover:opacity-95 sm:h-auto sm:w-auto sm:self-auto sm:px-4 sm:py-1.5 sm:leading-normal"
             type="button"
             onClick={() => openCreate(isoToday())}
+            aria-label="Add update"
           >
-            + Add update
+            {addUpdateLabel}
           </button>
         </div>
       </div>
