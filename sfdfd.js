@@ -47,6 +47,16 @@ function startProduction() {
     name: "backend",
     env: { NODE_ENV: "production" }
   });
+
+  // Optional: run a separate frontend server (serve frontend/dist via "vite preview")
+  // so a reverse proxy can route "/" -> frontend and "/api" -> backend.
+  if ((process.env.FBC_SPLIT_FRONTEND ?? "").toLowerCase() === "1") {
+    run(
+      "npm",
+      ["run", "preview", "--workspace", "frontend", "--", "--host", "0.0.0.0", "--port", "5173", "--strictPort"],
+      { name: "frontend", env: { NODE_ENV: "production" } }
+    );
+  }
 }
 
 function startDev() {
