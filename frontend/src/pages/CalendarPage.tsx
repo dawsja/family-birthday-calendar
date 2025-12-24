@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import listPlugin from "@fullcalendar/list";
@@ -25,6 +25,169 @@ function daysInMonth(year: number, monthIndex: number) {
   return new Date(year, monthIndex + 1, 0).getDate();
 }
 
+const MONTH_NAMES = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December"
+];
+
+const WEEKDAYS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
+
+interface MiniCalendarProps {
+  year: number;
+  month: number;
+  selectedDate: Date;
+  onSelect: (date: Date) => void;
+  onClose: () => void;
+}
+
+function MiniCalendar({ year, month, selectedDate, onSelect, onClose }: MiniCalendarProps) {
+  const [viewYear, setViewYear] = useState(year);
+  const [viewMonth, setViewMonth] = useState(month);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setViewYear(year);
+    setViewMonth(month);
+  }, [year, month]);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        onClose();
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [onClose]);
+
+  const prevMonth = () => {
+    if (viewMonth === 0) {
+      setViewMonth(11);
+      setViewYear(viewYear - 1);
+    } else {
+      setViewMonth(viewMonth - 1);
+    }
+  };
+
+  const nextMonth = () => {
+    if (viewMonth === 11) {
+      setViewMonth(0);
+      setViewYear(viewYear + 1);
+    } else {
+      setViewMonth(viewMonth + 1);
+    }
+  };
+
+  const firstDayOfMonth = new Date(viewYear, viewMonth, 1).getDay();
+  const totalDays = daysInMonth(viewYear, viewMonth);
+  const today = new Date();
+  const todayStr = `${today.getFullYear()}-${today.getMonth()}-${today.getDate()}`;
+  const selectedStr = `${selectedDate.getFullYear()}-${selectedDate.getMonth()}-${selectedDate.getDate()}`;
+
+  // Build calendar grid
+  const calendarDays: (number | null)[] = [];
+  for (let i = 0; i < firstDayOfMonth; i++) {
+    calendarDays.push(null);
+  }
+  for (let d = 1; d <= totalDays; d++) {
+    calendarDays.push(d);
+  }
+
+  return (
+    <div
+      ref={dropdownRef}
+      className="mini-calendar absolute left-0 top-full z-50 mt-2 rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-3 shadow-lg"
+    >
+      {/* Month/Year Header */}
+      <div className="mb-3 flex items-center justify-between">
+        <button
+          type="button"
+          onClick={prevMonth}
+          className="grid h-8 w-8 place-items-center rounded-full text-[rgb(var(--fg))] hover:bg-[rgb(var(--border))]"
+          aria-label="Previous month"
+        >
+          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+        <div className="flex items-center gap-2">
+          <select
+            value={viewMonth}
+            onChange={(e) => setViewMonth(Number(e.target.value))}
+            className="cursor-pointer bg-transparent text-sm font-medium outline-none"
+          >
+            {MONTH_NAMES.map((m, idx) => (
+              <option key={m} value={idx}>{m}</option>
+            ))}
+          </select>
+          <select
+            value={viewYear}
+            onChange={(e) => setViewYear(Number(e.target.value))}
+            className="cursor-pointer bg-transparent text-sm font-medium outline-none"
+          >
+            {Array.from({ length: 21 }, (_, i) => viewYear - 10 + i).map((y) => (
+              <option key={y} value={y}>{y}</option>
+            ))}
+          </select>
+        </div>
+        <button
+          type="button"
+          onClick={nextMonth}
+          className="grid h-8 w-8 place-items-center rounded-full text-[rgb(var(--fg))] hover:bg-[rgb(var(--border))]"
+          aria-label="Next month"
+        >
+          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
+      </div>
+
+      {/* Weekday headers */}
+      <div className="mb-1 grid grid-cols-7 gap-0">
+        {WEEKDAYS.map((wd) => (
+          <div key={wd} className="py-1 text-center text-xs font-medium text-[rgb(var(--muted))]">
+            {wd}
+          </div>
+        ))}
+      </div>
+
+      {/* Days grid */}
+      <div className="grid grid-cols-7 gap-0">
+        {calendarDays.map((day, idx) => {
+          if (day === null) {
+            return <div key={`empty-${idx}`} className="h-8 w-8" />;
+          }
+          const dateStr = `${viewYear}-${viewMonth}-${day}`;
+          const isToday = dateStr === todayStr;
+          const isSelected = dateStr === selectedStr;
+
+          return (
+            <button
+              key={day}
+              type="button"
+              onClick={() => {
+                onSelect(new Date(viewYear, viewMonth, day));
+                onClose();
+              }}
+              className={`
+                grid h-8 w-8 place-items-center rounded-full text-sm transition-colors
+                ${isSelected
+                  ? "bg-[rgb(var(--primary))] text-[rgb(var(--primary-foreground))]"
+                  : isToday
+                    ? "bg-[rgb(var(--primary))]/15 text-[rgb(var(--primary))] font-semibold"
+                    : "text-[rgb(var(--fg))] hover:bg-[rgb(var(--border))]"
+                }
+              `}
+            >
+              {day}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 const UPDATE_COLORS = [
   { id: "mint", label: "Mint", hex: "#A7F3D0" },
   { id: "sky", label: "Sky", hex: "#BAE6FD" },
@@ -49,19 +212,8 @@ export default function CalendarPage() {
   const initialView = useMemo(() => (isSmall ? "listWeek" : "dayGridMonth"), [isSmall]);
   const addUpdateLabel = useMemo(() => (isSmall ? "+" : "+ Add Update"), [isSmall]);
 
-  const [jumpYear, setJumpYear] = useState(() => new Date().getFullYear());
-  const [jumpMonth, setJumpMonth] = useState(() => new Date().getMonth());
-  const [jumpDay, setJumpDay] = useState(() => new Date().getDate());
-
-  const jumpYears = useMemo(() => {
-    const base = jumpYear || new Date().getFullYear();
-    const years: number[] = [];
-    for (let y = base - 10; y <= base + 10; y++) years.push(y);
-    const nowY = new Date().getFullYear();
-    if (!years.includes(nowY)) years.push(nowY);
-    years.sort((a, b) => a - b);
-    return years;
-  }, [jumpYear]);
+  const [currentDate, setCurrentDate] = useState(() => new Date());
+  const [miniCalendarOpen, setMiniCalendarOpen] = useState(false);
 
   const needsProfile =
     !!user && user.role === "user" && !!user.needsSetup && (!user.birthday || !user.venmo);
@@ -107,12 +259,29 @@ export default function CalendarPage() {
     }
   };
 
-  const gotoDate = (y: number, m: number, d: number) => {
-    const maxD = daysInMonth(y, m);
-    const dd = Math.max(1, Math.min(d, maxD));
-    const dt = new Date(y, m, dd);
-    calRef.current?.getApi().gotoDate(dt);
-  };
+  const gotoDate = useCallback((date: Date) => {
+    calRef.current?.getApi().gotoDate(date);
+    setCurrentDate(date);
+  }, []);
+
+  const handleDateSelect = useCallback((date: Date) => {
+    gotoDate(date);
+    setMiniCalendarOpen(false);
+  }, [gotoDate]);
+
+  const goToToday = useCallback(() => {
+    const today = new Date();
+    calRef.current?.getApi().today();
+    setCurrentDate(today);
+  }, []);
+
+  const goPrev = useCallback(() => {
+    calRef.current?.getApi().prev();
+  }, []);
+
+  const goNext = useCallback(() => {
+    calRef.current?.getApi().next();
+  }, []);
 
   const openCreate = (date: string) => {
     setCreateDate(date);
@@ -240,103 +409,78 @@ export default function CalendarPage() {
           </div>
         </div>
 
-        <div className="mx-auto flex max-w-6xl flex-col gap-2 px-3 pb-2 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex flex-wrap items-center gap-2">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-2 px-3 pb-2">
+          {/* Left side: Navigation controls */}
+          <div className="flex items-center gap-1 sm:gap-2">
+            {/* Today button */}
             <button
-              className="rounded-full border border-[rgb(var(--border))] bg-[rgb(var(--card))] px-2 py-1.5 text-sm hover:bg-black/5 dark:hover:bg-white/5 sm:px-3"
+              className="rounded-md border border-[rgb(var(--border))] bg-[rgb(var(--card))] px-2.5 py-1.5 text-sm font-medium hover:bg-[rgb(var(--border))]/50 sm:px-3"
               type="button"
-              onClick={() => calRef.current?.getApi().today()}
+              onClick={goToToday}
             >
               Today
             </button>
-            <div className="flex items-center overflow-hidden rounded-full border border-[rgb(var(--border))] bg-[rgb(var(--card))]">
+
+            {/* Prev/Next arrows */}
+            <div className="flex items-center">
               <button
-                className="px-2 py-1.5 text-sm hover:bg-black/5 dark:hover:bg-white/5 sm:px-3"
+                className="grid h-8 w-8 place-items-center rounded-full text-[rgb(var(--fg))] hover:bg-[rgb(var(--border))]/50"
                 type="button"
-                onClick={() => calRef.current?.getApi().prev()}
+                onClick={goPrev}
                 aria-label="Previous"
               >
-                ‹
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                </svg>
               </button>
               <button
-                className="px-2 py-1.5 text-sm hover:bg-black/5 dark:hover:bg-white/5 sm:px-3"
+                className="grid h-8 w-8 place-items-center rounded-full text-[rgb(var(--fg))] hover:bg-[rgb(var(--border))]/50"
                 type="button"
-                onClick={() => calRef.current?.getApi().next()}
+                onClick={goNext}
                 aria-label="Next"
               >
-                ›
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                </svg>
               </button>
             </div>
 
-            <div className="flex w-full items-center justify-between gap-2 rounded-full border border-[rgb(var(--border))] bg-[rgb(var(--card))] px-2 py-1 sm:w-auto sm:justify-start">
-              <select
-                className="bg-transparent text-xs sm:text-sm outline-none"
-                value={jumpYear}
-                onChange={(e) => {
-                  const y = Number(e.target.value);
-                  setJumpYear(y);
-                  gotoDate(y, jumpMonth, jumpDay);
-                }}
-                aria-label="Year"
+            {/* Month/Year display with mini calendar dropdown */}
+            <div className="relative">
+              <button
+                className="flex items-center gap-1 rounded-md px-2 py-1.5 text-base font-medium hover:bg-[rgb(var(--border))]/50 sm:text-lg"
+                type="button"
+                onClick={() => setMiniCalendarOpen(!miniCalendarOpen)}
+                aria-label="Select date"
               >
-                {jumpYears.map((y) => (
-                  <option key={y} value={y}>
-                    {y}
-                  </option>
-                ))}
-              </select>
-              <select
-                className="bg-transparent text-xs sm:text-sm outline-none"
-                value={jumpMonth}
-                onChange={(e) => {
-                  const m = Number(e.target.value);
-                  setJumpMonth(m);
-                  const dd = Math.min(jumpDay, daysInMonth(jumpYear, m));
-                  setJumpDay(dd);
-                  gotoDate(jumpYear, m, dd);
-                }}
-                aria-label="Month"
-              >
-                {[
-                  "Jan",
-                  "Feb",
-                  "Mar",
-                  "Apr",
-                  "May",
-                  "Jun",
-                  "Jul",
-                  "Aug",
-                  "Sep",
-                  "Oct",
-                  "Nov",
-                  "Dec"
-                ].map((m, idx) => (
-                  <option key={m} value={idx}>
-                    {m}
-                  </option>
-                ))}
-              </select>
-              <select
-                className="bg-transparent text-xs sm:text-sm outline-none"
-                value={jumpDay}
-                onChange={(e) => {
-                  const d = Number(e.target.value);
-                  setJumpDay(d);
-                  gotoDate(jumpYear, jumpMonth, d);
-                }}
-                aria-label="Day"
-              >
-                {Array.from({ length: daysInMonth(jumpYear, jumpMonth) }, (_, i) => i + 1).map((d) => (
-                  <option key={d} value={d}>
-                    {pad2(d)}
-                  </option>
-                ))}
-              </select>
+                <span>{MONTH_NAMES[currentDate.getMonth()]} {currentDate.getFullYear()}</span>
+                <svg className={`h-4 w-4 transition-transform ${miniCalendarOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              {/* Mobile backdrop */}
+              {miniCalendarOpen && (
+                <div
+                  className="fixed inset-0 z-40 bg-black/20 sm:hidden"
+                  onClick={() => setMiniCalendarOpen(false)}
+                  aria-hidden="true"
+                />
+              )}
+              {miniCalendarOpen && (
+                <MiniCalendar
+                  year={currentDate.getFullYear()}
+                  month={currentDate.getMonth()}
+                  selectedDate={currentDate}
+                  onSelect={handleDateSelect}
+                  onClose={() => setMiniCalendarOpen(false)}
+                />
+              )}
             </div>
           </div>
 
+          {/* Right side: Add Update button */}
           <button
-            className="grid h-9 w-9 place-items-center self-end rounded-full bg-[rgb(var(--primary))] text-sm font-semibold leading-none text-[rgb(var(--primary-foreground))] hover:opacity-95 sm:h-auto sm:w-auto sm:self-auto sm:px-4 sm:py-1.5 sm:leading-normal"
+            className="grid h-9 w-9 place-items-center rounded-full bg-[rgb(var(--primary))] text-sm font-semibold leading-none text-[rgb(var(--primary-foreground))] shadow-sm hover:shadow-md transition-shadow sm:h-auto sm:w-auto sm:rounded-full sm:px-4 sm:py-2"
             type="button"
             onClick={() => openCreate(isoToday())}
             aria-label="Add update"
@@ -364,9 +508,7 @@ export default function CalendarPage() {
               setTitle(api ? api.view.title : "Calendar");
               if (api) {
                 const d = api.getDate();
-                setJumpYear(d.getFullYear());
-                setJumpMonth(d.getMonth());
-                setJumpDay(d.getDate());
+                setCurrentDate(d);
               }
             }}
             dateClick={(arg) => openCreate(arg.dateStr.slice(0, 10))}
