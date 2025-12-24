@@ -17,7 +17,8 @@ const IsoDate = z
 const UpdateSchema = z.object({
   date: IsoDate,
   title: z.string().trim().min(1).max(120),
-  body: z.string().trim().max(2000).optional()
+  body: z.string().trim().max(2000).optional(),
+  colorId: z.string().trim().min(1).max(32).optional()
 });
 
 router.post("/", requireAuth, (req, res) => {
@@ -29,14 +30,15 @@ router.post("/", requireAuth, (req, res) => {
   const now = Date.now();
 
   db.prepare(
-    `INSERT INTO updates (id, user_id, date, title, body, created_at, updated_at)
-     VALUES (@id, @user_id, @date, @title, @body, @created_at, @updated_at)`
+    `INSERT INTO updates (id, user_id, date, title, body, color_id, created_at, updated_at)
+     VALUES (@id, @user_id, @date, @title, @body, @color_id, @created_at, @updated_at)`
   ).run({
     id,
     user_id: req.user!.id,
     date: parsed.data.date,
     title: parsed.data.title,
     body: parsed.data.body ?? null,
+    color_id: parsed.data.colorId ?? null,
     created_at: now,
     updated_at: now
   });
@@ -62,13 +64,14 @@ router.put("/:id", requireAuth, (req, res) => {
 
   db.prepare(
     `UPDATE updates
-     SET date = @date, title = @title, body = @body, updated_at = @updated_at
+     SET date = @date, title = @title, body = @body, color_id = @color_id, updated_at = @updated_at
      WHERE id = @id`
   ).run({
     id,
     date: parsed.data.date,
     title: parsed.data.title,
     body: parsed.data.body ?? null,
+    color_id: parsed.data.colorId ?? null,
     updated_at: Date.now()
   });
 
