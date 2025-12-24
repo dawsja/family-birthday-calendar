@@ -27,7 +27,7 @@ router.post("/login", loginLimiter, async (req, res) => {
   const db = getDb();
   const user = db
     .prepare(
-      `SELECT id, username, display_name, password_hash, role, birthday, venmo
+      `SELECT id, username, display_name, password_hash, role, birthday, venmo, last_login_at
        FROM users
        WHERE lower(username) = lower(?)`
     )
@@ -40,6 +40,7 @@ router.post("/login", loginLimiter, async (req, res) => {
         role: "user" | "admin";
         birthday: string | null;
         venmo: string | null;
+        last_login_at: number | null;
       }
     | undefined;
 
@@ -55,7 +56,16 @@ router.post("/login", loginLimiter, async (req, res) => {
   const session = newSession(user.id);
   setSessionCookie(res, session.id);
 
-  db.prepare("UPDATE users SET last_login_at = ? WHERE id = ?").run(Date.now(), user.id);
+  // "First login" onboarding:
+  // - Only normal users get prompted
+  // - Only on first login (tracked via last_login_at)
+  // - Keep last_login_at NULL until profile setup is completed so the prompt stays enforced
+  const needsSetup =
+    user.role === "user" && user.last_login_at == null && (!user.birthday || !user.venmo);
+  const loginAt = Date.now();
+  if (!needsSetup) {
+    db.prepare("UPDATE users SET last_login_at = ? WHERE id = ?").run(loginAt, user.id);
+  }
 
   return res.json({
     user: {
@@ -64,7 +74,9 @@ router.post("/login", loginLimiter, async (req, res) => {
       displayName: user.display_name,
       role: user.role,
       birthday: user.birthday,
-      venmo: user.venmo
+      venmo: user.venmo,
+      lastLoginAt: needsSetup ? null : loginAt,
+      needsSetup
     },
     csrfToken: session.csrfToken
   });

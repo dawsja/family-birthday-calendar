@@ -7,6 +7,8 @@ export type User = {
   role: UserRole;
   birthday: string | null;
   venmo: string | null;
+  lastLoginAt?: number | null;
+  needsSetup?: boolean;
 };
 
 export type CalendarEvent = {

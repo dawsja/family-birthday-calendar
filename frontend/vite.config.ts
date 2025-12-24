@@ -7,6 +7,7 @@ export default defineConfig({
   server: {
     // Allow access from other devices (e.g., over Tailscale).
     host: true,
+    allowedHosts: ["life.domingz.com"],
     port: 5173,
     strictPort: true,
     proxy: {

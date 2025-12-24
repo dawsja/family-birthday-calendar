@@ -3,8 +3,8 @@
 Secure, mobile-friendly “Google Calendar”-style web app for a family birthday calendar:
 
 - **Shared calendar**: everyone sees the same calendar (no personal calendars).
-- **Birthdays**: users set their birthday on first login → auto appears as an all‑day event each year.
-- **Venmo**: users set their Venmo handle on first login → shown on birthday events.
+- **Birthdays**: normal users set their birthday on first login → auto appears as an all‑day event each year.
+- **Venmo**: normal users set their Venmo handle on first login → shown on birthday events.
 - **Life updates**: anyone can add an all‑day “update” on a date (new job, moved, etc.).
 - **Admin UI**: admins can create users + reset passwords.
 - **Light/Dark mode**: toggle in the UI; respects system preference initially.
@@ -63,3 +63,20 @@ npm run start
 ```
 
 The backend serves the compiled frontend from `frontend/dist` when `NODE_ENV=production`.
+
+## PM2
+
+This repo includes `sfdfd.js` as a single PM2 entrypoint.
+
+### Production
+
+```bash
+npm run build
+NODE_ENV=production pm2 start sfdfd.js --name fbc
+```
+
+### Dev (optional)
+
+```bash
+pm2 start sfdfd.js --name fbc-dev
+```
