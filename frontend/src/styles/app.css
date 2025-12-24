@@ -41,12 +41,12 @@ body {
   overflow-x: hidden;
 }
 
-/* FullCalendar theming (keep close to Google Calendar). */
+/* FullCalendar theming (Airtable/Notion-like month grid). */
 .fc {
   --fc-border-color: rgb(var(--border));
   --fc-page-bg-color: rgb(var(--bg));
   --fc-neutral-bg-color: rgb(var(--card));
-  --fc-today-bg-color: color-mix(in srgb, rgb(var(--primary)) 10%, transparent);
+  --fc-today-bg-color: color-mix(in srgb, rgb(var(--primary)) 6%, transparent);
   --fc-button-bg-color: rgb(var(--card));
   --fc-button-border-color: rgb(var(--border));
   --fc-button-text-color: rgb(var(--fg));
@@ -56,25 +56,65 @@ body {
   --fc-button-active-border-color: rgb(var(--border));
 }
 
-.fc .fc-toolbar-title {
-  font-size: 1.15rem;
-  font-weight: 600;
+.fc .fc-scrollgrid {
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.fc .fc-col-header-cell {
+  background: rgb(var(--card));
+}
+
+.fc .fc-col-header-cell-cushion {
+  padding: 10px 8px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: rgb(var(--muted));
+  text-decoration: none;
+}
+
+.fc .fc-daygrid-day {
+  background: rgb(var(--card));
+}
+
+.fc .fc-daygrid-day-frame {
+  /* Taller cells like the reference screenshot */
+  min-height: 112px;
+  padding: 6px;
+}
+
+.fc .fc-daygrid-day-top {
+  justify-content: flex-end;
 }
 
 .fc .fc-daygrid-day-number {
-  padding: 6px;
-  font-size: 0.85rem;
+  padding: 6px 8px;
+  font-size: 0.8rem;
+  color: rgb(var(--muted));
+  text-decoration: none;
+  border-radius: 8px;
+}
+
+.fc .fc-day-today .fc-daygrid-day-number {
+  color: rgb(var(--primary));
+  font-weight: 600;
+}
+
+.fc .fc-day-other .fc-daygrid-day-number {
+  opacity: 0.45;
 }
 
 .fc .fc-event {
-  border-radius: 8px;
+  border-radius: 9999px;
   border: 0;
-  padding: 2px 6px;
+  padding: 3px 10px;
+  font-size: 0.75rem;
+  line-height: 1.2;
 }
 
 .fc .fc-event.bday {
-  background: color-mix(in srgb, rgb(var(--primary)) 85%, rgb(var(--bg)));
-  color: rgb(var(--primary-foreground));
+  background: color-mix(in srgb, rgb(var(--primary)) 28%, rgb(var(--card)));
+  color: rgb(var(--fg));
 }
 
 .fc .fc-event.update {
@@ -82,12 +122,31 @@ body {
   color: rgb(var(--fg));
 }
 
+.fc .fc-daygrid-event {
+  margin-top: 4px;
+}
+
+.fc .fc-daygrid-event .fc-event-main,
+.fc .fc-daygrid-event .fc-event-main-frame {
+  padding: 0;
+}
+
+.fc .fc-event-title {
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fc .fc-daygrid-more-link {
+  margin-top: 4px;
+  padding: 0 8px;
+  font-size: 0.75rem;
+  color: rgb(var(--muted));
+}
+
 /* Mobile tweaks: avoid horizontal overflow and improve readability. */
 @media (max-width: 640px) {
-  .fc .fc-toolbar-title {
-    font-size: 1rem;
-  }
-
   /* FullCalendar list view can create wide rows; allow wrapping. */
   .fc .fc-list-table {
     width: 100%;
