@@ -16,6 +16,21 @@ function isoToday() {
   return new Date().toISOString().slice(0, 10);
 }
 
+const UPDATE_COLORS = [
+  { id: "mint", label: "Mint", hex: "#A7F3D0" },
+  { id: "sky", label: "Sky", hex: "#BAE6FD" },
+  { id: "lavender", label: "Lavender", hex: "#DDD6FE" },
+  { id: "peach", label: "Peach", hex: "#FED7AA" },
+  { id: "rose", label: "Rose", hex: "#FBCFE8" }
+] as const;
+
+type UpdateColorId = (typeof UPDATE_COLORS)[number]["id"];
+
+function getUpdateColor(colorId: unknown) {
+  if (!colorId || typeof colorId !== "string") return null;
+  return UPDATE_COLORS.find((c) => c.id === colorId) ?? null;
+}
+
 export default function CalendarPage() {
   const { user, logout, updateProfile } = useAuth();
   const isSmall = useMediaQuery("(max-width: 640px)");
@@ -38,6 +53,7 @@ export default function CalendarPage() {
   const [createDate, setCreateDate] = useState<string>(isoToday());
   const [createTitle, setCreateTitle] = useState("");
   const [createBody, setCreateBody] = useState("");
+  const [createColorId, setCreateColorId] = useState<UpdateColorId>("mint");
   const [createBusy, setCreateBusy] = useState(false);
   const [createErr, setCreateErr] = useState<string | null>(null);
 
@@ -60,6 +76,7 @@ export default function CalendarPage() {
     setCreateDate(date);
     setCreateTitle("");
     setCreateBody("");
+    setCreateColorId("mint");
     setCreateErr(null);
     setCreateOpen(true);
   };
@@ -70,7 +87,12 @@ export default function CalendarPage() {
     try {
       await apiFetch<{ id: string }>("/api/updates", {
         method: "POST",
-        body: { date: createDate, title: createTitle, body: createBody || undefined }
+        body: {
+          date: createDate,
+          title: createTitle,
+          body: createBody || undefined,
+          colorId: createColorId
+        }
       });
       setCreateOpen(false);
       calRef.current?.getApi().refetchEvents();
@@ -194,7 +216,19 @@ export default function CalendarPage() {
                   ...e,
                   // ensure classNames for styling even if backend changes
                   classNames: [e.type === "birthday" ? "bday" : "update"],
-                  extendedProps: { ...e.extendedProps, type: e.type }
+                  extendedProps: { ...e.extendedProps, type: e.type },
+                  ...(e.type === "update"
+                    ? (() => {
+                        const color = getUpdateColor((e.extendedProps as any)?.colorId);
+                        if (!color) return {};
+                        return {
+                          backgroundColor: color.hex,
+                          borderColor: color.hex,
+                          // Keep text readable over pastel backgrounds (in both light/dark).
+                          textColor: "#111827"
+                        };
+                      })()
+                    : {})
                 }));
                 success(events);
               } catch (e) {
@@ -240,6 +274,30 @@ export default function CalendarPage() {
               placeholder="Share a little context…"
             />
           </label>
+          <div className="flex flex-col gap-1 text-sm">
+            <div className="text-[rgb(var(--muted))]">Color</div>
+            <div className="flex items-center gap-2">
+              {UPDATE_COLORS.map((c) => {
+                const selected = createColorId === c.id;
+                return (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => setCreateColorId(c.id)}
+                    className={[
+                      "h-6 w-6 rounded-full border",
+                      selected
+                        ? "border-[rgb(var(--primary))] ring-2 ring-[rgb(var(--primary))]/40"
+                        : "border-[rgb(var(--border))]"
+                    ].join(" ")}
+                    style={{ backgroundColor: c.hex }}
+                    aria-label={`Set update color to ${c.label}`}
+                    aria-pressed={selected}
+                  />
+                );
+              })}
+            </div>
+          </div>
           {createErr ? <div className="text-sm text-red-600">{createErr}</div> : null}
           <button
             className="rounded-lg bg-[rgb(var(--primary))] px-3 py-2 text-sm font-semibold text-[rgb(var(--primary-foreground))] disabled:opacity-60"
@@ -284,6 +342,20 @@ export default function CalendarPage() {
                 <div className="text-xs text-[rgb(var(--muted))]">
                   Posted by {(eventData.extendedProps as any)?.author ?? "Unknown"}
                 </div>
+                {(() => {
+                  const color = getUpdateColor((eventData.extendedProps as any)?.colorId);
+                  if (!color) return null;
+                  return (
+                    <div className="mt-2 flex items-center gap-2 text-xs text-[rgb(var(--muted))]">
+                      <span
+                        className="inline-block h-3 w-3 rounded-full border border-[rgb(var(--border))]"
+                        style={{ backgroundColor: color.hex }}
+                        aria-hidden="true"
+                      />
+                      <span>{color.label}</span>
+                    </div>
+                  );
+                })()}
                 {(eventData.extendedProps as any)?.body ? (
                   <div className="mt-2 whitespace-pre-wrap text-sm">
                     {(eventData.extendedProps as any).body}
