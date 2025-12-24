@@ -9,8 +9,6 @@ type AdminUser = {
   username: string;
   displayName: string | null;
   role: "user" | "admin";
-  birthday: string | null;
-  venmo: string | null;
   createdAt: number;
   lastLoginAt: number | null;
 };
@@ -211,8 +209,6 @@ export default function AdminPage() {
                   <tr>
                     <th className="py-2 pr-3">Username</th>
                     <th className="py-2 pr-3">Role</th>
-                    <th className="py-2 pr-3">Birthday</th>
-                    <th className="py-2 pr-3">Venmo</th>
                     <th className="py-2 pr-3"></th>
                   </tr>
                 </thead>
@@ -226,8 +222,6 @@ export default function AdminPage() {
                         ) : null}
                       </td>
                       <td className="py-2 pr-3">{u.role}</td>
-                      <td className="py-2 pr-3">{u.birthday ?? "—"}</td>
-                      <td className="py-2 pr-3">{u.venmo ?? "—"}</td>
                       <td className="py-2 pr-3 text-right">
                         <button
                           className="rounded-full border border-[rgb(var(--border))] bg-[rgb(var(--card))] px-3 py-1.5 text-xs hover:bg-black/5 dark:hover:bg-white/5"

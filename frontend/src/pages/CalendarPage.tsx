@@ -16,6 +16,22 @@ function isoToday() {
   return new Date().toISOString().slice(0, 10);
 }
 
+const UPDATE_COLORS = [
+  { id: "mint", label: "Mint", hex: "#A7F3D0" },
+  { id: "sky", label: "Sky", hex: "#BAE6FD" },
+  { id: "lavender", label: "Lavender", hex: "#DDD6FE" },
+  { id: "peach", label: "Peach", hex: "#FED7AA" },
+  { id: "rose", label: "Rose", hex: "#FBCFE8" }
+] as const;
+
+type UpdateColorId = (typeof UPDATE_COLORS)[number]["id"];
+const DEFAULT_UPDATE_COLOR_ID: UpdateColorId = "mint";
+
+function getUpdateColor(id: unknown) {
+  const str = typeof id === "string" ? id : "";
+  return UPDATE_COLORS.find((c) => c.id === (str as UpdateColorId)) ?? UPDATE_COLORS[0];
+}
+
 export default function CalendarPage() {
   const { user, logout, updateProfile } = useAuth();
   const isSmall = useMediaQuery("(max-width: 640px)");
@@ -38,6 +54,7 @@ export default function CalendarPage() {
   const [createDate, setCreateDate] = useState<string>(isoToday());
   const [createTitle, setCreateTitle] = useState("");
   const [createBody, setCreateBody] = useState("");
+  const [createColorId, setCreateColorId] = useState<UpdateColorId>(DEFAULT_UPDATE_COLOR_ID);
   const [createBusy, setCreateBusy] = useState(false);
   const [createErr, setCreateErr] = useState<string | null>(null);
 
@@ -60,6 +77,7 @@ export default function CalendarPage() {
     setCreateDate(date);
     setCreateTitle("");
     setCreateBody("");
+    setCreateColorId(DEFAULT_UPDATE_COLOR_ID);
     setCreateErr(null);
     setCreateOpen(true);
   };
@@ -70,7 +88,12 @@ export default function CalendarPage() {
     try {
       await apiFetch<{ id: string }>("/api/updates", {
         method: "POST",
-        body: { date: createDate, title: createTitle, body: createBody || undefined }
+        body: {
+          date: createDate,
+          title: createTitle,
+          body: createBody || undefined,
+          colorId: createColorId
+        }
       });
       setCreateOpen(false);
       calRef.current?.getApi().refetchEvents();
@@ -190,12 +213,26 @@ export default function CalendarPage() {
                 const r = await apiFetch<{ events: CalendarEvent[] }>(
                   `/api/calendar?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`
                 );
-                const events: EventInput[] = r.events.map((e) => ({
-                  ...e,
-                  // ensure classNames for styling even if backend changes
-                  classNames: [e.type === "birthday" ? "bday" : "update"],
-                  extendedProps: { ...e.extendedProps, type: e.type }
-                }));
+                const events: EventInput[] = r.events.map((e) => {
+                  const base: EventInput = {
+                    ...e,
+                    // ensure classNames for styling even if backend changes
+                    classNames: [e.type === "birthday" ? "bday" : "update"],
+                    extendedProps: { ...e.extendedProps, type: e.type }
+                  };
+
+                  if (e.type === "update") {
+                    const c = getUpdateColor((e.extendedProps as any)?.colorId);
+                    return {
+                      ...base,
+                      backgroundColor: c.hex,
+                      borderColor: c.hex,
+                      textColor: "#111827"
+                    };
+                  }
+
+                  return base;
+                });
                 success(events);
               } catch (e) {
                 failure(e as any);
@@ -220,6 +257,27 @@ export default function CalendarPage() {
               onChange={(e) => setCreateDate(e.target.value)}
             />
           </label>
+          <div className="flex flex-col gap-1 text-sm">
+            <span className="text-[rgb(var(--muted))]">Color</span>
+            <div className="flex items-center gap-2">
+              {UPDATE_COLORS.map((c) => {
+                const selected = createColorId === c.id;
+                return (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => setCreateColorId(c.id)}
+                    aria-label={`Select ${c.label}`}
+                    className={[
+                      "h-6 w-6 rounded-full border border-[rgb(var(--border))]",
+                      selected ? "ring-2 ring-[rgb(var(--primary))] ring-offset-2 ring-offset-[rgb(var(--bg))]" : ""
+                    ].join(" ")}
+                    style={{ backgroundColor: c.hex }}
+                  />
+                );
+              })}
+            </div>
+          </div>
           <label className="flex flex-col gap-1 text-sm">
             <span className="text-[rgb(var(--muted))]">Title</span>
             <input
@@ -281,6 +339,20 @@ export default function CalendarPage() {
             ) : null}
             {eventData.type === "update" ? (
               <div className="mt-2 rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--bg))] p-3">
+                <div className="mb-2 flex items-center gap-2 text-xs text-[rgb(var(--muted))]">
+                  {(() => {
+                    const c = getUpdateColor((eventData.extendedProps as any)?.colorId);
+                    return (
+                      <>
+                        <span
+                          className="inline-block h-2.5 w-2.5 rounded-full"
+                          style={{ backgroundColor: c.hex }}
+                        />
+                        <span>{c.label}</span>
+                      </>
+                    );
+                  })()}
+                </div>
                 <div className="text-xs text-[rgb(var(--muted))]">
                   Posted by {(eventData.extendedProps as any)?.author ?? "Unknown"}
                 </div>
