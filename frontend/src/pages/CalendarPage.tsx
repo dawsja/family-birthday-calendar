@@ -39,7 +39,8 @@ export default function CalendarPage() {
 
   const initialView = useMemo(() => (isSmall ? "listWeek" : "dayGridMonth"), [isSmall]);
 
-  const needsProfile = !!user && (!user.birthday || !user.venmo);
+  const needsProfile =
+    !!user && user.role === "user" && !!user.needsSetup && (!user.birthday || !user.venmo);
   const [profileBirthday, setProfileBirthday] = useState(user?.birthday ?? "");
   const [profileVenmo, setProfileVenmo] = useState(user?.venmo ?? "");
   const [profileBusy, setProfileBusy] = useState(false);

@@ -72,7 +72,7 @@ export default function LoginPage() {
         </div>
 
         <div className="text-xs text-[rgb(var(--muted))]">
-          Admin creates accounts. On your first login you’ll set your birthday and Venmo handle.
+          Admin creates accounts. Normal users will set birthday + Venmo on first login.
         </div>
       </div>
     </div>

@@ -6,7 +6,9 @@ import { getDb } from "../db";
 const router = Router();
 
 router.get("/", requireAuth, (req, res) => {
-  return res.json({ user: req.user });
+  const u = req.user!;
+  const needsSetup = u.role === "user" && u.lastLoginAt == null && (!u.birthday || !u.venmo);
+  return res.json({ user: { ...u, needsSetup } });
 });
 
 const BirthdaySchema = z
@@ -50,9 +52,9 @@ router.put("/profile", requireAuth, (req, res) => {
     display_name: displayName ?? null
   });
 
-  const updated = db
+  let updated = db
     .prepare(
-      `SELECT id, username, display_name, role, birthday, venmo
+      `SELECT id, username, display_name, role, birthday, venmo, last_login_at
        FROM users WHERE id = ?`
     )
     .get(req.user!.id) as {
@@ -62,7 +64,15 @@ router.put("/profile", requireAuth, (req, res) => {
     role: "user" | "admin";
     birthday: string | null;
     venmo: string | null;
+    last_login_at: number | null;
   };
+
+  // If this was the first login and the user completed required fields, finalize first login.
+  if (updated.role === "user" && updated.last_login_at == null && updated.birthday && updated.venmo) {
+    const t = Date.now();
+    db.prepare("UPDATE users SET last_login_at = ? WHERE id = ?").run(t, updated.id);
+    updated = { ...updated, last_login_at: t };
+  }
 
   req.user = {
     id: updated.id,
@@ -70,10 +80,13 @@ router.put("/profile", requireAuth, (req, res) => {
     displayName: updated.display_name,
     role: updated.role,
     birthday: updated.birthday,
-    venmo: updated.venmo
+    venmo: updated.venmo,
+    lastLoginAt: updated.last_login_at
   };
 
-  return res.json({ user: req.user });
+  const needsSetup =
+    req.user.role === "user" && req.user.lastLoginAt == null && (!req.user.birthday || !req.user.venmo);
+  return res.json({ user: { ...req.user, needsSetup } });
 });
 
 export default router;

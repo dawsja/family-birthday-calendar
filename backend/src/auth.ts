@@ -12,6 +12,7 @@ export type AuthedUser = {
   role: UserRole;
   birthday: string | null;
   venmo: string | null;
+  lastLoginAt: number | null;
 };
 
 declare module "express-serve-static-core" {
@@ -44,6 +45,7 @@ export function authMiddleware(req: Request, _res: Response, next: NextFunction)
          u.role as role,
          u.birthday as birthday,
          u.venmo as venmo,
+         u.last_login_at as last_login_at,
          s.expires_at as expires_at
        FROM sessions s
        JOIN users u ON u.id = s.user_id
@@ -59,6 +61,7 @@ export function authMiddleware(req: Request, _res: Response, next: NextFunction)
         role: UserRole;
         birthday: string | null;
         venmo: string | null;
+        last_login_at: number | null;
         expires_at: number;
       }
     | undefined;
@@ -76,7 +79,8 @@ export function authMiddleware(req: Request, _res: Response, next: NextFunction)
     displayName: row.display_name,
     role: row.role,
     birthday: row.birthday,
-    venmo: row.venmo
+    venmo: row.venmo,
+    lastLoginAt: row.last_login_at
   };
 
   return next();
