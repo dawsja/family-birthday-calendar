@@ -49,6 +49,11 @@ app.use(
               "img-src": ["'self'", "data:"],
               // Tailwind + FullCalendar include inline styles; keep tight otherwise.
               "style-src": ["'self'", "'unsafe-inline'"],
+              // Some CSP implementations split these out. FullCalendar injects a <style> tag at runtime.
+              "style-src-elem": ["'self'", "'unsafe-inline'"],
+              "style-src-attr": ["'self'", "'unsafe-inline'"],
+              // FullCalendar embeds its icon font via a data: URL in injected CSS.
+              "font-src": ["'self'", "data:"],
               "script-src": ["'self'"],
               "connect-src": ["'self'"],
               "object-src": ["'none'"],

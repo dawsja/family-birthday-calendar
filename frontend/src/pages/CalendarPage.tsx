@@ -81,8 +81,10 @@ function MiniCalendar({ year, month, selectedDate, onSelect, onClose }: MiniCale
   const firstDayOfMonth = new Date(viewYear, viewMonth, 1).getDay();
   const totalDays = daysInMonth(viewYear, viewMonth);
   const today = new Date();
-  const todayStr = `${today.getFullYear()}-${today.getMonth()}-${today.getDate()}`;
-  const selectedStr = `${selectedDate.getFullYear()}-${selectedDate.getMonth()}-${selectedDate.getDate()}`;
+  const todayStr = `${today.getFullYear()}-${pad2(today.getMonth() + 1)}-${pad2(today.getDate())}`;
+  const selectedStr = `${selectedDate.getFullYear()}-${pad2(selectedDate.getMonth() + 1)}-${pad2(
+    selectedDate.getDate()
+  )}`;
 
   // Build calendar grid
   const calendarDays: (number | null)[] = [];
@@ -157,7 +159,7 @@ function MiniCalendar({ year, month, selectedDate, onSelect, onClose }: MiniCale
           if (day === null) {
             return <div key={`empty-${idx}`} className="h-8 w-8" />;
           }
-          const dateStr = `${viewYear}-${viewMonth}-${day}`;
+          const dateStr = `${viewYear}-${pad2(viewMonth + 1)}-${pad2(day)}`;
           const isToday = dateStr === todayStr;
           const isSelected = dateStr === selectedStr;
 
