@@ -16,6 +16,15 @@ function isoToday() {
   return new Date().toISOString().slice(0, 10);
 }
 
+function pad2(n: number) {
+  return String(n).padStart(2, "0");
+}
+
+function daysInMonth(year: number, monthIndex: number) {
+  // monthIndex: 0-11
+  return new Date(year, monthIndex + 1, 0).getDate();
+}
+
 const UPDATE_COLORS = [
   { id: "mint", label: "Mint", hex: "#A7F3D0" },
   { id: "sky", label: "Sky", hex: "#BAE6FD" },
@@ -38,6 +47,20 @@ export default function CalendarPage() {
   const calRef = useRef<FullCalendar | null>(null);
 
   const initialView = useMemo(() => (isSmall ? "listWeek" : "dayGridMonth"), [isSmall]);
+
+  const [jumpYear, setJumpYear] = useState(() => new Date().getFullYear());
+  const [jumpMonth, setJumpMonth] = useState(() => new Date().getMonth());
+  const [jumpDay, setJumpDay] = useState(() => new Date().getDate());
+
+  const jumpYears = useMemo(() => {
+    const base = jumpYear || new Date().getFullYear();
+    const years: number[] = [];
+    for (let y = base - 10; y <= base + 10; y++) years.push(y);
+    const nowY = new Date().getFullYear();
+    if (!years.includes(nowY)) years.push(nowY);
+    years.sort((a, b) => a - b);
+    return years;
+  }, [jumpYear]);
 
   const needsProfile =
     !!user && user.role === "user" && !!user.needsSetup && (!user.birthday || !user.venmo);
@@ -62,6 +85,15 @@ export default function CalendarPage() {
   const [eventOpen, setEventOpen] = useState(false);
   const [eventData, setEventData] = useState<any>(null);
 
+  const [editOpen, setEditOpen] = useState(false);
+  const [editUpdateId, setEditUpdateId] = useState<string | null>(null);
+  const [editDate, setEditDate] = useState<string>(isoToday());
+  const [editTitle, setEditTitle] = useState("");
+  const [editBody, setEditBody] = useState("");
+  const [editColorId, setEditColorId] = useState<UpdateColorId>(DEFAULT_UPDATE_COLOR_ID);
+  const [editBusy, setEditBusy] = useState(false);
+  const [editErr, setEditErr] = useState<string | null>(null);
+
   const onSaveProfile = async () => {
     setProfileErr(null);
     setProfileBusy(true);
@@ -72,6 +104,13 @@ export default function CalendarPage() {
     } finally {
       setProfileBusy(false);
     }
+  };
+
+  const gotoDate = (y: number, m: number, d: number) => {
+    const maxD = daysInMonth(y, m);
+    const dd = Math.max(1, Math.min(d, maxD));
+    const dt = new Date(y, m, dd);
+    calRef.current?.getApi().gotoDate(dt);
   };
 
   const openCreate = (date: string) => {
@@ -102,6 +141,65 @@ export default function CalendarPage() {
       setCreateErr(e?.message ?? "Failed to create");
     } finally {
       setCreateBusy(false);
+    }
+  };
+
+  const canManageUpdate = useMemo(() => {
+    if (!user) return false;
+    if (!eventData || eventData.type !== "update") return false;
+    const ownerId = String((eventData.extendedProps as any)?.userId ?? "");
+    return user.role === "admin" || ownerId === user.id;
+  }, [user, eventData]);
+
+  const openEditUpdate = () => {
+    const updId = String((eventData?.extendedProps as any)?.updateId ?? "");
+    if (!updId) return;
+    setEditUpdateId(updId);
+    setEditDate(String(eventData.start ?? isoToday()));
+    setEditTitle(String(eventData.title ?? ""));
+    setEditBody(String((eventData.extendedProps as any)?.body ?? ""));
+    setEditColorId(
+      (getUpdateColor((eventData.extendedProps as any)?.colorId).id as UpdateColorId) ??
+        DEFAULT_UPDATE_COLOR_ID
+    );
+    setEditErr(null);
+    setEditOpen(true);
+  };
+
+  const submitEdit = async () => {
+    if (!editUpdateId) return;
+    setEditErr(null);
+    setEditBusy(true);
+    try {
+      await apiFetch<{ ok: true }>(`/api/updates/${encodeURIComponent(editUpdateId)}`, {
+        method: "PUT",
+        body: {
+          date: editDate,
+          title: editTitle,
+          body: editBody || undefined,
+          colorId: editColorId
+        }
+      });
+      setEditOpen(false);
+      calRef.current?.getApi().refetchEvents();
+    } catch (e: any) {
+      setEditErr(e?.message ?? "Failed to save");
+    } finally {
+      setEditBusy(false);
+    }
+  };
+
+  const deleteUpdate = async () => {
+    const updId = String((eventData?.extendedProps as any)?.updateId ?? "");
+    if (!updId) return;
+    const ok = window.confirm("Delete this life update?");
+    if (!ok) return;
+    try {
+      await apiFetch<{ ok: true }>(`/api/updates/${encodeURIComponent(updId)}`, { method: "DELETE" });
+      setEventOpen(false);
+      calRef.current?.getApi().refetchEvents();
+    } catch (e: any) {
+      alert((e as any)?.message ?? "Failed to delete");
     }
   };
 
@@ -168,6 +266,72 @@ export default function CalendarPage() {
                 ›
               </button>
             </div>
+
+            <div className="flex items-center gap-2 rounded-full border border-[rgb(var(--border))] bg-[rgb(var(--card))] px-2 py-1">
+              <select
+                className="bg-transparent text-xs sm:text-sm outline-none"
+                value={jumpYear}
+                onChange={(e) => {
+                  const y = Number(e.target.value);
+                  setJumpYear(y);
+                  gotoDate(y, jumpMonth, jumpDay);
+                }}
+                aria-label="Year"
+              >
+                {jumpYears.map((y) => (
+                  <option key={y} value={y}>
+                    {y}
+                  </option>
+                ))}
+              </select>
+              <select
+                className="bg-transparent text-xs sm:text-sm outline-none"
+                value={jumpMonth}
+                onChange={(e) => {
+                  const m = Number(e.target.value);
+                  setJumpMonth(m);
+                  const dd = Math.min(jumpDay, daysInMonth(jumpYear, m));
+                  setJumpDay(dd);
+                  gotoDate(jumpYear, m, dd);
+                }}
+                aria-label="Month"
+              >
+                {[
+                  "Jan",
+                  "Feb",
+                  "Mar",
+                  "Apr",
+                  "May",
+                  "Jun",
+                  "Jul",
+                  "Aug",
+                  "Sep",
+                  "Oct",
+                  "Nov",
+                  "Dec"
+                ].map((m, idx) => (
+                  <option key={m} value={idx}>
+                    {m}
+                  </option>
+                ))}
+              </select>
+              <select
+                className="bg-transparent text-xs sm:text-sm outline-none"
+                value={jumpDay}
+                onChange={(e) => {
+                  const d = Number(e.target.value);
+                  setJumpDay(d);
+                  gotoDate(jumpYear, jumpMonth, d);
+                }}
+                aria-label="Day"
+              >
+                {Array.from({ length: daysInMonth(jumpYear, jumpMonth) }, (_, i) => i + 1).map((d) => (
+                  <option key={d} value={d}>
+                    {pad2(d)}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
           <button
@@ -196,10 +360,17 @@ export default function CalendarPage() {
             datesSet={() => {
               const api = calRef.current?.getApi();
               setTitle(api ? api.view.title : "Calendar");
+              if (api) {
+                const d = api.getDate();
+                setJumpYear(d.getFullYear());
+                setJumpMonth(d.getMonth());
+                setJumpDay(d.getDate());
+              }
             }}
             dateClick={(arg) => openCreate(arg.dateStr.slice(0, 10))}
             eventClick={(arg: EventClickArg) => {
               setEventData({
+                id: arg.event.id,
                 title: arg.event.title,
                 start: arg.event.startStr.slice(0, 10),
                 type: (arg.event.extendedProps as any).type,
@@ -364,10 +535,93 @@ export default function CalendarPage() {
                 ) : (
                   <div className="mt-2 text-[rgb(var(--muted))]">No additional details.</div>
                 )}
+
+                {canManageUpdate ? (
+                  <div className="mt-3 flex items-center justify-end gap-2">
+                    <button
+                      className="rounded-full border border-[rgb(var(--border))] bg-[rgb(var(--card))] px-3 py-1.5 text-xs hover:bg-black/5 dark:hover:bg-white/5"
+                      type="button"
+                      onClick={openEditUpdate}
+                    >
+                      Edit
+                    </button>
+                    <button
+                      className="rounded-full border border-red-300/60 bg-[rgb(var(--card))] px-3 py-1.5 text-xs text-red-700 hover:bg-red-50 dark:border-red-900/50 dark:text-red-300 dark:hover:bg-red-950/30"
+                      type="button"
+                      onClick={deleteUpdate}
+                    >
+                      Delete
+                    </button>
+                  </div>
+                ) : null}
               </div>
             ) : null}
           </div>
         ) : null}
+      </Modal>
+
+      <Modal open={editOpen} title="Edit life update" onClose={() => setEditOpen(false)}>
+        <div className="flex flex-col gap-3">
+          <label className="flex flex-col gap-1 text-sm">
+            <span className="text-[rgb(var(--muted))]">Date</span>
+            <input
+              className="rounded-lg border border-[rgb(var(--border))] bg-transparent px-3 py-2 outline-none focus:ring-2 focus:ring-[rgb(var(--primary))]/40"
+              type="date"
+              value={editDate}
+              onChange={(e) => setEditDate(e.target.value)}
+            />
+          </label>
+          <div className="flex flex-col gap-1 text-sm">
+            <span className="text-[rgb(var(--muted))]">Color</span>
+            <div className="flex items-center gap-2">
+              {UPDATE_COLORS.map((c) => {
+                const selected = editColorId === c.id;
+                return (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => setEditColorId(c.id)}
+                    aria-label={`Select ${c.label}`}
+                    className={[
+                      "h-6 w-6 rounded-full border border-[rgb(var(--border))]",
+                      selected ? "ring-2 ring-[rgb(var(--primary))] ring-offset-2 ring-offset-[rgb(var(--bg))]" : ""
+                    ].join(" ")}
+                    style={{ backgroundColor: c.hex }}
+                  />
+                );
+              })}
+            </div>
+          </div>
+          <label className="flex flex-col gap-1 text-sm">
+            <span className="text-[rgb(var(--muted))]">Title</span>
+            <input
+              className="rounded-lg border border-[rgb(var(--border))] bg-transparent px-3 py-2 outline-none focus:ring-2 focus:ring-[rgb(var(--primary))]/40"
+              value={editTitle}
+              onChange={(e) => setEditTitle(e.target.value)}
+              maxLength={120}
+              placeholder="New job, moved, engagement, etc."
+            />
+          </label>
+          <label className="flex flex-col gap-1 text-sm">
+            <span className="text-[rgb(var(--muted))]">Details (optional)</span>
+            <textarea
+              className="min-h-24 rounded-lg border border-[rgb(var(--border))] bg-transparent px-3 py-2 outline-none focus:ring-2 focus:ring-[rgb(var(--primary))]/40"
+              value={editBody}
+              onChange={(e) => setEditBody(e.target.value)}
+              maxLength={2000}
+              placeholder="Share a little context…"
+            />
+          </label>
+          {editErr ? <div className="text-sm text-red-600">{editErr}</div> : null}
+          <button
+            className="rounded-lg bg-[rgb(var(--primary))] px-3 py-2 text-sm font-semibold text-[rgb(var(--primary-foreground))] disabled:opacity-60"
+            disabled={editBusy || !editTitle.trim() || !editUpdateId}
+            type="button"
+            onClick={submitEdit}
+          >
+            {editBusy ? "Saving…" : "Save changes"}
+          </button>
+        </div>
       </Modal>
 
       {/* First-login forced profile setup */}
