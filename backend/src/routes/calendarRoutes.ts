@@ -46,6 +46,7 @@ router.get("/", requireAuth, (req, res) => {
          u.date as date,
          u.title as title,
          u.body as body,
+         u.color_id as color_id,
          usr.username as username,
          usr.display_name as display_name
        FROM updates u
@@ -59,6 +60,7 @@ router.get("/", requireAuth, (req, res) => {
     date: string;
     title: string;
     body: string | null;
+    color_id: string | null;
     username: string;
     display_name: string | null;
   }>;
@@ -117,7 +119,8 @@ router.get("/", requireAuth, (req, res) => {
       updateId: u.id,
       userId: u.user_id,
       author: u.display_name || u.username,
-      body: u.body
+      body: u.body,
+      colorId: u.color_id ?? undefined
     }
   }));
 

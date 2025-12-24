@@ -50,6 +50,7 @@ export function getDb(): Database.Database {
       date TEXT NOT NULL,
       title TEXT NOT NULL,
       body TEXT,
+      color_id TEXT,
       created_at INTEGER NOT NULL,
       updated_at INTEGER NOT NULL,
       FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
@@ -57,6 +58,15 @@ export function getDb(): Database.Database {
     CREATE INDEX IF NOT EXISTS idx_updates_date ON updates(date);
     CREATE INDEX IF NOT EXISTS idx_updates_user_id ON updates(user_id);
   `);
+
+  // Lightweight migrations for existing DB files.
+  // (SQLite doesn't support "ADD COLUMN IF NOT EXISTS".)
+  const updatesCols = instance
+    .prepare(`PRAGMA table_info(updates)`)
+    .all() as Array<{ name: string }>;
+  if (!updatesCols.some((c) => c.name === "color_id")) {
+    instance.exec(`ALTER TABLE updates ADD COLUMN color_id TEXT;`);
+  }
 
   // Opportunistic cleanup (keeps the sessions table from growing forever).
   instance.prepare("DELETE FROM sessions WHERE expires_at <= ?").run(Date.now());
