@@ -24,7 +24,7 @@ router.get("/users", requireAuth, requireAdmin, (req, res) => {
   const db = getDb();
   const users = db
     .prepare(
-      `SELECT id, username, display_name, role, birthday, venmo, created_at, last_login_at
+      `SELECT id, username, display_name, role, created_at, last_login_at
        FROM users
        ORDER BY created_at ASC`
     )
@@ -34,8 +34,6 @@ router.get("/users", requireAuth, requireAdmin, (req, res) => {
       username: u.username,
       displayName: u.display_name,
       role: u.role,
-      birthday: u.birthday,
-      venmo: u.venmo,
       createdAt: u.created_at,
       lastLoginAt: u.last_login_at
     }));
