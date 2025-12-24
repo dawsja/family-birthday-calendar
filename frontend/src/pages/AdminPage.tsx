@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { ThemeToggle } from "../components/ThemeToggle";
 import { apiFetch } from "../lib/api";
 import { useAuth } from "../lib/auth";
+import { Modal } from "../components/Modal";
 
 type AdminUser = {
   id: string;
@@ -11,6 +12,8 @@ type AdminUser = {
   role: "user" | "admin";
   createdAt: number;
   lastLoginAt: number | null;
+  birthday: string | null;
+  venmo: string | null;
 };
 
 export default function AdminPage() {
@@ -25,6 +28,15 @@ export default function AdminPage() {
   const [role, setRole] = useState<"user" | "admin">("user");
   const [busy, setBusy] = useState(false);
 
+  const [editOpen, setEditOpen] = useState(false);
+  const [editUser, setEditUser] = useState<AdminUser | null>(null);
+  const [editUsername, setEditUsername] = useState("");
+  const [editDisplayName, setEditDisplayName] = useState("");
+  const [editBirthday, setEditBirthday] = useState("");
+  const [editVenmo, setEditVenmo] = useState("");
+  const [editRole, setEditRole] = useState<"user" | "admin">("user");
+  const [editBusy, setEditBusy] = useState(false);
+
   const refresh = async () => {
     setErr(null);
     setLoading(true);
@@ -36,6 +48,16 @@ export default function AdminPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const openEdit = (u: AdminUser) => {
+    setEditUser(u);
+    setEditUsername(u.username);
+    setEditDisplayName(u.displayName ?? "");
+    setEditBirthday(u.birthday ?? "");
+    setEditVenmo(u.venmo ?? "");
+    setEditRole(u.role);
+    setEditOpen(true);
   };
 
   useEffect(() => {
@@ -97,6 +119,64 @@ export default function AdminPage() {
       alert("Password reset. User sessions revoked.");
     } catch (e: any) {
       setErr(e?.message ?? "Failed to reset password");
+    }
+  };
+
+  const resetSetup = async (u: AdminUser) => {
+    const ok = window.confirm(
+      `Reset setup for '${u.username}'?\n\nThis clears birthday + Venmo and requires setup again on next login.`
+    );
+    if (!ok) return;
+    setErr(null);
+    try {
+      await apiFetch<{ ok: true }>(`/api/admin/users/${encodeURIComponent(u.id)}`, {
+        method: "PATCH",
+        body: { birthday: null, venmo: null, lastLoginAt: null }
+      });
+      await refresh();
+    } catch (e: any) {
+      setErr(e?.message ?? "Failed to reset setup");
+    }
+  };
+
+  const saveEdit = async () => {
+    if (!editUser) return;
+    setErr(null);
+    setEditBusy(true);
+    try {
+      await apiFetch<{ ok: true }>(`/api/admin/users/${encodeURIComponent(editUser.id)}`, {
+        method: "PATCH",
+        body: {
+          username: editUsername.trim().toLowerCase() || undefined,
+          displayName: editDisplayName.trim() ? editDisplayName.trim() : null,
+          birthday: editBirthday ? editBirthday : null,
+          venmo: editVenmo.trim() ? editVenmo.trim() : null,
+          role: editRole
+        }
+      });
+      setEditOpen(false);
+      setEditUser(null);
+      await refresh();
+    } catch (e: any) {
+      setErr(e?.message ?? "Failed to update user");
+    } finally {
+      setEditBusy(false);
+    }
+  };
+
+  const deleteUser = async (u: AdminUser) => {
+    const ok = window.confirm(
+      `Delete user '${u.username}'?\n\nThis removes their sessions and life updates too.`
+    );
+    if (!ok) return;
+    setErr(null);
+    try {
+      await apiFetch<{ ok: true }>(`/api/admin/users/${encodeURIComponent(u.id)}`, {
+        method: "DELETE"
+      });
+      await refresh();
+    } catch (e: any) {
+      setErr(e?.message ?? "Failed to delete user");
     }
   };
 
@@ -209,6 +289,8 @@ export default function AdminPage() {
                   <tr>
                     <th className="py-2 pr-3">Username</th>
                     <th className="py-2 pr-3">Role</th>
+                    <th className="py-2 pr-3">Birthday</th>
+                    <th className="py-2 pr-3">Venmo</th>
                     <th className="py-2 pr-3"></th>
                   </tr>
                 </thead>
@@ -222,14 +304,41 @@ export default function AdminPage() {
                         ) : null}
                       </td>
                       <td className="py-2 pr-3">{u.role}</td>
+                      <td className="py-2 pr-3">
+                        {u.birthday ? <span className="font-mono text-xs">{u.birthday}</span> : "—"}
+                      </td>
+                      <td className="py-2 pr-3">{u.venmo ?? "—"}</td>
                       <td className="py-2 pr-3 text-right">
-                        <button
-                          className="rounded-full border border-[rgb(var(--border))] bg-[rgb(var(--card))] px-3 py-1.5 text-xs hover:bg-black/5 dark:hover:bg-white/5"
-                          type="button"
-                          onClick={() => resetPassword(u.id)}
-                        >
-                          Reset password
-                        </button>
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            className="rounded-full border border-[rgb(var(--border))] bg-[rgb(var(--card))] px-3 py-1.5 text-xs hover:bg-black/5 dark:hover:bg-white/5"
+                            type="button"
+                            onClick={() => openEdit(u)}
+                          >
+                            Edit
+                          </button>
+                          <button
+                            className="rounded-full border border-[rgb(var(--border))] bg-[rgb(var(--card))] px-3 py-1.5 text-xs hover:bg-black/5 dark:hover:bg-white/5"
+                            type="button"
+                            onClick={() => resetSetup(u)}
+                          >
+                            Reset setup
+                          </button>
+                          <button
+                            className="rounded-full border border-[rgb(var(--border))] bg-[rgb(var(--card))] px-3 py-1.5 text-xs hover:bg-black/5 dark:hover:bg-white/5"
+                            type="button"
+                            onClick={() => resetPassword(u.id)}
+                          >
+                            Reset password
+                          </button>
+                          <button
+                            className="rounded-full border border-red-300/60 bg-[rgb(var(--card))] px-3 py-1.5 text-xs text-red-700 hover:bg-red-50 dark:border-red-900/50 dark:text-red-300 dark:hover:bg-red-950/30"
+                            type="button"
+                            onClick={() => deleteUser(u)}
+                          >
+                            Delete
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -239,6 +348,77 @@ export default function AdminPage() {
           )}
         </div>
       </div>
+
+      <Modal
+        open={editOpen}
+        title={editUser ? `Edit user: ${editUser.username}` : "Edit user"}
+        onClose={() => setEditOpen(false)}
+      >
+        <div className="flex flex-col gap-3">
+          <label className="flex flex-col gap-1 text-sm">
+            <span className="text-[rgb(var(--muted))]">Username</span>
+            <input
+              className="rounded-lg border border-[rgb(var(--border))] bg-transparent px-3 py-2 outline-none focus:ring-2 focus:ring-[rgb(var(--primary))]/40"
+              value={editUsername}
+              onChange={(e) => setEditUsername(e.target.value)}
+              placeholder="jane.doe"
+              required
+            />
+          </label>
+          <label className="flex flex-col gap-1 text-sm">
+            <span className="text-[rgb(var(--muted))]">Display name</span>
+            <input
+              className="rounded-lg border border-[rgb(var(--border))] bg-transparent px-3 py-2 outline-none focus:ring-2 focus:ring-[rgb(var(--primary))]/40"
+              value={editDisplayName}
+              onChange={(e) => setEditDisplayName(e.target.value)}
+              placeholder="Jane"
+            />
+            <span className="text-xs text-[rgb(var(--muted))]">Leave blank to clear.</span>
+          </label>
+          <label className="flex flex-col gap-1 text-sm">
+            <span className="text-[rgb(var(--muted))]">Birthday</span>
+            <input
+              className="rounded-lg border border-[rgb(var(--border))] bg-transparent px-3 py-2 outline-none focus:ring-2 focus:ring-[rgb(var(--primary))]/40"
+              type="date"
+              value={editBirthday}
+              onChange={(e) => setEditBirthday(e.target.value)}
+            />
+            <span className="text-xs text-[rgb(var(--muted))]">Leave blank to clear.</span>
+          </label>
+          <label className="flex flex-col gap-1 text-sm">
+            <span className="text-[rgb(var(--muted))]">Venmo</span>
+            <input
+              className="rounded-lg border border-[rgb(var(--border))] bg-transparent px-3 py-2 outline-none focus:ring-2 focus:ring-[rgb(var(--primary))]/40"
+              value={editVenmo}
+              onChange={(e) => setEditVenmo(e.target.value)}
+              placeholder="@yourname"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
+            />
+            <span className="text-xs text-[rgb(var(--muted))]">Leave blank to clear.</span>
+          </label>
+          <label className="flex flex-col gap-1 text-sm">
+            <span className="text-[rgb(var(--muted))]">Role</span>
+            <select
+              className="rounded-lg border border-[rgb(var(--border))] bg-transparent px-3 py-2 outline-none focus:ring-2 focus:ring-[rgb(var(--primary))]/40"
+              value={editRole}
+              onChange={(e) => setEditRole(e.target.value as any)}
+            >
+              <option value="user">user</option>
+              <option value="admin">admin</option>
+            </select>
+          </label>
+          <button
+            className="rounded-lg bg-[rgb(var(--primary))] px-3 py-2 text-sm font-semibold text-[rgb(var(--primary-foreground))] disabled:opacity-60"
+            disabled={editBusy || !editUser}
+            type="button"
+            onClick={saveEdit}
+          >
+            {editBusy ? "Saving…" : "Save changes"}
+          </button>
+        </div>
+      </Modal>
     </div>
   );
 }
