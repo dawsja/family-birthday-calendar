@@ -124,17 +124,17 @@ location / {
 
 ## PM2
 
-This repo includes `sfdfd.js` as a single PM2 entrypoint.
+This repo includes `server.js` as a single-process PM2 entrypoint.
 
 ### Production
 
 ```bash
 npm run build
-NODE_ENV=production pm2 start sfdfd.js --name fbc
+NODE_ENV=production pm2 start server.js --name fbc
 ```
 
-### Dev (optional)
+### Legacy entrypoint (optional)
 
 ```bash
-pm2 start sfdfd.js --name fbc-dev
+pm2 start sfdfd.js --name fbc
 ```
