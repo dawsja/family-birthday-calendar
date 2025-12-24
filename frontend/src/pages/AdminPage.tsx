@@ -14,6 +14,7 @@ type AdminUser = {
   lastLoginAt: number | null;
   birthday: string | null;
   venmo: string | null;
+  mustSetPassword: boolean;
 };
 
 export default function AdminPage() {
@@ -91,7 +92,7 @@ export default function AdminPage() {
         body: {
           username,
           displayName: displayName || undefined,
-          password,
+          ...(role === "admin" ? { password } : {}),
           role
         }
       });
@@ -210,7 +211,8 @@ export default function AdminPage() {
         <div className="rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-4">
           <div className="mb-2 text-sm font-semibold">Create user</div>
           <div className="mb-3 text-xs text-[rgb(var(--muted))]">
-            Accounts are provisioned by admin. Users will set birthday + Venmo on first login.
+            Accounts are provisioned by admin. Users will set their password on first login (no temporary
+            passwords to deliver).
           </div>
           <form className="grid gap-3 sm:grid-cols-2" onSubmit={onCreate}>
             <label className="flex flex-col gap-1 text-sm">
@@ -234,27 +236,33 @@ export default function AdminPage() {
               />
             </label>
             <label className="flex flex-col gap-1 text-sm">
-              <span className="text-[rgb(var(--muted))]">Temporary password</span>
-              <input
-                className="rounded-lg border border-[rgb(var(--border))] bg-transparent px-3 py-2 outline-none focus:ring-2 focus:ring-[rgb(var(--primary))]/40"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                type="password"
-                minLength={12}
-                required
-              />
-            </label>
-            <label className="flex flex-col gap-1 text-sm">
               <span className="text-[rgb(var(--muted))]">Role</span>
               <select
                 className="rounded-lg border border-[rgb(var(--border))] bg-transparent px-3 py-2 outline-none focus:ring-2 focus:ring-[rgb(var(--primary))]/40"
                 value={role}
-                onChange={(e) => setRole(e.target.value as any)}
+                onChange={(e) => {
+                  const next = e.target.value as any;
+                  setRole(next);
+                  if (next !== "admin") setPassword("");
+                }}
               >
                 <option value="user">user</option>
                 <option value="admin">admin</option>
               </select>
             </label>
+            {role === "admin" ? (
+              <label className="flex flex-col gap-1 text-sm">
+                <span className="text-[rgb(var(--muted))]">Admin password</span>
+                <input
+                  className="rounded-lg border border-[rgb(var(--border))] bg-transparent px-3 py-2 outline-none focus:ring-2 focus:ring-[rgb(var(--primary))]/40"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  type="password"
+                  minLength={12}
+                  required
+                />
+              </label>
+            ) : null}
             <div className="sm:col-span-2">
               <button
                 className="rounded-lg bg-[rgb(var(--primary))] px-3 py-2 text-sm font-semibold text-[rgb(var(--primary-foreground))] disabled:opacity-60"
@@ -301,6 +309,9 @@ export default function AdminPage() {
                         <div className="font-medium">{u.username}</div>
                         {u.displayName ? (
                           <div className="text-xs text-[rgb(var(--muted))]">{u.displayName}</div>
+                        ) : null}
+                        {u.mustSetPassword ? (
+                          <div className="text-xs text-[rgb(var(--muted))]">Password not set</div>
                         ) : null}
                       </td>
                       <td className="py-2 pr-3">{u.role}</td>

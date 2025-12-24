@@ -83,7 +83,13 @@ app.use(authMiddleware);
 
 // CSRF protection for all state-changing API calls except login.
 app.use("/api", (req, res, next) => {
-  if (req.path === "/auth/login" || req.path === "/auth/logout") return next();
+  if (
+    req.path === "/auth/login" ||
+    req.path === "/auth/logout" ||
+    req.path === "/auth/set-password"
+  ) {
+    return next();
+  }
   return requireCsrf(req, res, next);
 });
 
