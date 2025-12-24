@@ -24,9 +24,9 @@ export function ThemeToggle() {
       className="rounded-full border border-[rgb(var(--border))] bg-[rgb(var(--card))] px-3 py-1.5 text-sm hover:bg-black/5 dark:hover:bg-white/5"
       onClick={toggle}
       type="button"
-      aria-label="Toggle dark mode"
+      aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
     >
-      {isDark ? "Dark" : "Light"}
+      {isDark ? "Light" : "Dark mode"}
     </button>
   );
 }
