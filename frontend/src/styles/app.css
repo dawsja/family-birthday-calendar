@@ -30,6 +30,17 @@ body {
   color: rgb(var(--fg));
 }
 
+/* Ensure app can size/scroll correctly on mobile. */
+#root {
+  min-height: 100%;
+}
+
+/* Prevent accidental horizontal scroll from calendar tables. */
+html,
+body {
+  overflow-x: hidden;
+}
+
 /* FullCalendar theming (keep close to Google Calendar). */
 .fc {
   --fc-border-color: rgb(var(--border));
@@ -96,6 +107,14 @@ body {
 .mini-calendar {
   width: 280px;
   animation: fadeIn 0.15s ease-out;
+}
+
+/* Failsafe layout for the mini calendar if utilities ever fail to apply. */
+.mini-calendar .grid {
+  display: grid;
+}
+.mini-calendar .grid-cols-7 {
+  grid-template-columns: repeat(7, minmax(0, 1fr));
 }
 
 .mini-calendar select {
