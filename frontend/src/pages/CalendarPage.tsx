@@ -38,9 +38,11 @@ interface MiniCalendarProps {
   selectedDate: Date;
   onSelect: (date: Date) => void;
   onClose: () => void;
+  isMobile?: boolean;
+  style?: React.CSSProperties;
 }
 
-function MiniCalendar({ year, month, selectedDate, onSelect, onClose }: MiniCalendarProps) {
+function MiniCalendar({ year, month, selectedDate, onSelect, onClose, isMobile, style }: MiniCalendarProps) {
   const [viewYear, setViewYear] = useState(year);
   const [viewMonth, setViewMonth] = useState(month);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -98,7 +100,11 @@ function MiniCalendar({ year, month, selectedDate, onSelect, onClose }: MiniCale
   return (
     <div
       ref={dropdownRef}
-      className="mini-calendar absolute left-0 top-full z-50 mt-2 rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-3 shadow-lg"
+      style={style}
+      className={[
+        "mini-calendar z-50 rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-3 shadow-lg",
+        isMobile ? "fixed" : "absolute left-0 top-full mt-2"
+      ].join(" ")}
     >
       {/* Month/Year Header */}
       <div className="mb-3 flex items-center justify-between">
@@ -210,12 +216,14 @@ export default function CalendarPage() {
   const { user, logout, updateProfile } = useAuth();
   const isSmall = useMediaQuery("(max-width: 640px)");
   const calRef = useRef<FullCalendar | null>(null);
+  const miniAnchorRef = useRef<HTMLButtonElement | null>(null);
 
   const initialView = useMemo(() => (isSmall ? "listWeek" : "dayGridMonth"), [isSmall]);
   const addUpdateLabel = useMemo(() => (isSmall ? "+" : "+ Add Update"), [isSmall]);
 
   const [currentDate, setCurrentDate] = useState(() => new Date());
   const [miniCalendarOpen, setMiniCalendarOpen] = useState(false);
+  const [miniCalendarStyle, setMiniCalendarStyle] = useState<React.CSSProperties | undefined>(undefined);
 
   const needsProfile =
     !!user && user.role === "user" && !!user.needsSetup && (!user.birthday || !user.venmo);
@@ -284,6 +292,68 @@ export default function CalendarPage() {
   const goNext = useCallback(() => {
     calRef.current?.getApi().next();
   }, []);
+
+  const computeMiniCalendarStyle = useCallback(() => {
+    // Desktop: normal dropdown positioning via absolute styles/classes.
+    if (!isSmall) return undefined;
+
+    const anchor = miniAnchorRef.current;
+    const margin = 8;
+    const sidePad = 12;
+    const vpH = window.visualViewport?.height ?? window.innerHeight;
+    const topOffset = window.visualViewport?.offsetTop ?? 0;
+    const leftOffset = window.visualViewport?.offsetLeft ?? 0;
+
+    // Fallback if anchor isn't available yet: pin near top, keep fully visible.
+    if (!anchor) {
+      const top = topOffset + margin;
+      return {
+        position: "fixed" as const,
+        zIndex: 50,
+        top,
+        left: leftOffset + sidePad,
+        right: sidePad,
+        width: `min(320px, calc(100vw - ${sidePad * 2}px))`,
+        maxHeight: Math.max(200, vpH - top - margin),
+        overflow: "auto" as const
+      };
+    }
+
+    const r = anchor.getBoundingClientRect();
+    const top = Math.round(r.bottom + margin);
+    const maxHeight = Math.max(200, vpH - top - margin);
+
+    return {
+      position: "fixed" as const,
+      zIndex: 50,
+      top: top + topOffset,
+      left: leftOffset + sidePad,
+      right: sidePad,
+      width: `min(320px, calc(100vw - ${sidePad * 2}px))`,
+      maxHeight,
+      overflow: "auto" as const
+    };
+  }, [isSmall]);
+
+  useEffect(() => {
+    if (!miniCalendarOpen) return;
+    if (!isSmall) {
+      setMiniCalendarStyle(undefined);
+      return;
+    }
+
+    const update = () => setMiniCalendarStyle(computeMiniCalendarStyle());
+    update();
+
+    window.addEventListener("resize", update);
+    window.visualViewport?.addEventListener("resize", update);
+    window.visualViewport?.addEventListener("scroll", update);
+    return () => {
+      window.removeEventListener("resize", update);
+      window.visualViewport?.removeEventListener("resize", update);
+      window.visualViewport?.removeEventListener("scroll", update);
+    };
+  }, [computeMiniCalendarStyle, isSmall, miniCalendarOpen]);
 
   const openCreate = (date: string) => {
     setCreateDate(date);
@@ -452,7 +522,14 @@ export default function CalendarPage() {
               <button
                 className="flex items-center gap-1 rounded-md px-2 py-1.5 text-base font-medium hover:bg-[rgb(var(--border))]/50 sm:text-lg"
                 type="button"
-                onClick={() => setMiniCalendarOpen(!miniCalendarOpen)}
+                ref={miniAnchorRef}
+                onClick={() => {
+                  setMiniCalendarOpen((v) => {
+                    const next = !v;
+                    if (next) setMiniCalendarStyle(computeMiniCalendarStyle());
+                    return next;
+                  });
+                }}
                 aria-label="Select date"
               >
                 <span>{MONTH_NAMES[currentDate.getMonth()]} {currentDate.getFullYear()}</span>
@@ -475,6 +552,8 @@ export default function CalendarPage() {
                   selectedDate={currentDate}
                   onSelect={handleDateSelect}
                   onClose={() => setMiniCalendarOpen(false)}
+                  isMobile={isSmall}
+                  style={miniCalendarStyle}
                 />
               )}
             </div>
