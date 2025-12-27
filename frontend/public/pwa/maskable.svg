@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="Family Birthday Calendar (maskable)">
+  <!-- Maskable icons need a safe padding area; keep artwork centered. -->
+  <rect width="512" height="512" fill="#1a73e8"/>
+  <g transform="translate(64 64)">
+    <rect x="0" y="0" width="384" height="384" rx="96" fill="#1558b0" opacity="0.75"/>
+    <rect x="88" y="122" width="208" height="190" rx="24" fill="#ffffff" opacity="0.94"/>
+    <rect x="88" y="122" width="208" height="56" rx="24" fill="#ffffff"/>
+    <rect x="118" y="92" width="34" height="60" rx="17" fill="#ffffff"/>
+    <rect x="232" y="92" width="34" height="60" rx="17" fill="#ffffff"/>
+    <g fill="#1a73e8" opacity="0.9">
+      <circle cx="140" cy="212" r="11"/>
+      <circle cx="192" cy="212" r="11"/>
+      <circle cx="244" cy="212" r="11"/>
+      <circle cx="140" cy="256" r="11"/>
+      <circle cx="192" cy="256" r="11"/>
+      <circle cx="244" cy="256" r="11"/>
+    </g>
+    <path d="M192 324c18 0 32-14 32-32 0-24-32-62-32-62s-32 38-32 62c0 18 14 32 32 32z" fill="#1a73e8" opacity="0.95"/>
+  </g>
+</svg>
