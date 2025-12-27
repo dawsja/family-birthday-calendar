@@ -153,9 +153,22 @@ body {
 
 /* Mobile tweaks: avoid horizontal overflow and improve readability. */
 @media (max-width: 640px) {
+  /* Make sure the calendar can shrink inside its card on narrow screens. */
+  .fc,
+  .fc .fc-view-harness,
+  .fc .fc-scrollgrid {
+    max-width: 100%;
+    min-width: 0;
+  }
+
   /* FullCalendar list view can create wide rows; allow wrapping. */
   .fc .fc-list-table {
     width: 100%;
+    table-layout: fixed;
+  }
+
+  .fc .fc-list-event-time {
+    white-space: nowrap;
   }
 
   .fc .fc-list-event-title,
@@ -164,7 +177,7 @@ body {
   }
 
   .fc .fc-list-event-title {
-    word-break: break-word;
+    overflow-wrap: anywhere;
   }
 }
 
