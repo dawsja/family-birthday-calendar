@@ -16,8 +16,9 @@
   --muted: 156 163 175;
   --card: 24 26 28;
   --border: 55 65 81;
-  --primary: 138 180 248;
-  --primary-foreground: 0 0 0;
+  /* Keep accent blue consistent across themes. */
+  --primary: 26 115 232; /* Google-ish blue */
+  --primary-foreground: 255 255 255;
 }
 
 html,
