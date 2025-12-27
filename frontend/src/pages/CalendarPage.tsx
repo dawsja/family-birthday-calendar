@@ -311,9 +311,10 @@ export default function CalendarPage() {
         position: "fixed" as const,
         zIndex: 50,
         top,
-        left: leftOffset + sidePad,
-        right: sidePad,
-        width: `min(320px, calc(100vw - ${sidePad * 2}px))`,
+        left: `calc(50% + ${leftOffset}px)`,
+        transform: "translateX(-50%)",
+        width: `calc(100vw - ${sidePad * 2}px)`,
+        maxWidth: 360,
         maxHeight: Math.max(200, vpH - top - margin),
         overflow: "auto" as const
       };
@@ -327,9 +328,10 @@ export default function CalendarPage() {
       position: "fixed" as const,
       zIndex: 50,
       top: top + topOffset,
-      left: leftOffset + sidePad,
-      right: sidePad,
-      width: `min(320px, calc(100vw - ${sidePad * 2}px))`,
+      left: `calc(50% + ${leftOffset}px)`,
+      transform: "translateX(-50%)",
+      width: `calc(100vw - ${sidePad * 2}px)`,
+      maxWidth: 360,
       maxHeight,
       overflow: "auto" as const
     };
