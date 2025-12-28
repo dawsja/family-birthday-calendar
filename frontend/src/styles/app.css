@@ -1,14 +1,16 @@
 @import "tailwindcss";
 
 :root {
-  /* Everforest Dark (single-theme app) */
-  --bg: 45 53 59; /* #2d353b */
-  --fg: 211 198 170; /* #d3c6aa */
-  --muted: 157 169 160; /* #9da9a0 */
-  --card: 52 63 68; /* #343f44 */
-  --border: 71 82 88; /* #475258 */
-  --primary: 127 187 179; /* #7fbbb3 */
-  --primary-foreground: 45 53 59; /* #2d353b */
+  /* Dark mode: muted pastels */
+  --bg: 44 44 44; /* #2C2C2C */
+  --fg: 228 228 228; /* #E4E4E4 */
+  --muted: 184 184 184; /* #B8B8B8 */
+  --card: 53 53 53; /* #353535 */
+  --border: 71 71 71; /* #474747 */
+  --primary: 179 156 208; /* #B39CD0 (Button/CTA) */
+  --primary-foreground: 44 44 44; /* #2C2C2C */
+  --accent-1: 168 218 220; /* #A8DADC */
+  --accent-2: 255 193 204; /* #FFC1CC */
   color-scheme: dark;
 }
 
@@ -110,7 +112,7 @@ body {
 }
 
 .fc .fc-event.bday {
-  background: color-mix(in srgb, rgb(var(--primary)) 28%, rgb(var(--card)));
+  background: color-mix(in srgb, rgb(var(--accent-2)) 30%, rgb(var(--card)));
   color: rgb(var(--fg));
 }
 

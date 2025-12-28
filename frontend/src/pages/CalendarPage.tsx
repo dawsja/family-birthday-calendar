@@ -624,7 +624,8 @@ export default function CalendarPage() {
                       ...base,
                       backgroundColor: c.hex,
                       borderColor: c.hex,
-                      textColor: "#111827"
+                      // Keep text readable on light pastel event pills.
+                      textColor: "rgb(var(--bg))"
                     };
                   }
 
