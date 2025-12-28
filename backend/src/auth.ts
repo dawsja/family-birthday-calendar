@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import type { NextFunction, Request, Response } from "express";
 import { getDb } from "./db";
-import { getEnv } from "./env";
+import { getEnv } from "./db";
 
 export type UserRole = "user" | "admin";
 
