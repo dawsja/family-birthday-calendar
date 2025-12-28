@@ -94,12 +94,6 @@ Then run both:
 npm run start:split
 ```
 
-Or with PM2 using the single entrypoint:
-
-```bash
-NODE_ENV=production FBC_SPLIT_FRONTEND=1 pm2 start sfdfd.js --name fbc
-```
-
 ### NPM advanced config (single Proxy Host)
 
 Create one Proxy Host for `life.domingz.com` (forward host/port can be anything; it will be overridden by the locations),
@@ -131,10 +125,4 @@ This repo includes `server.js` as a single-process PM2 entrypoint.
 ```bash
 npm run build
 NODE_ENV=production pm2 start server.js --name fbc
-```
-
-### Legacy entrypoint (optional)
-
-```bash
-pm2 start sfdfd.js --name fbc
 ```
