@@ -4,7 +4,6 @@ import dayGridPlugin from "@fullcalendar/daygrid";
 import listPlugin from "@fullcalendar/list";
 import interactionPlugin from "@fullcalendar/interaction";
 import type { EventClickArg, EventInput } from "@fullcalendar/core/index.js";
-import { ThemeToggle } from "../components/ThemeToggle";
 import { useAuth } from "../lib/auth";
 import { apiFetch } from "../lib/api";
 import { useMediaQuery } from "../lib/useMediaQuery";
@@ -466,15 +465,14 @@ export default function CalendarPage() {
           <div className="flex items-center gap-2">
             {user?.role === "admin" ? (
               <Link
-                className="hidden sm:inline rounded-full border border-[rgb(var(--border))] bg-[rgb(var(--card))] px-3 py-1.5 text-sm hover:bg-black/5 dark:hover:bg-white/5"
+                className="hidden sm:inline rounded-full border border-[rgb(var(--border))] bg-[rgb(var(--card))] px-3 py-1.5 text-sm hover:bg-white/5"
                 to="/admin"
               >
                 Admin
               </Link>
             ) : null}
-            <ThemeToggle />
             <button
-              className="rounded-full border border-[rgb(var(--border))] bg-[rgb(var(--card))] px-3 py-1.5 text-sm hover:bg-black/5 dark:hover:bg-white/5"
+              className="rounded-full border border-[rgb(var(--border))] bg-[rgb(var(--card))] px-3 py-1.5 text-sm hover:bg-white/5"
               onClick={() => logout()}
               type="button"
             >
@@ -766,14 +764,14 @@ export default function CalendarPage() {
                 {canManageUpdate ? (
                   <div className="mt-3 flex items-center justify-end gap-2">
                     <button
-                      className="rounded-full border border-[rgb(var(--border))] bg-[rgb(var(--card))] px-3 py-1.5 text-xs hover:bg-black/5 dark:hover:bg-white/5"
+                      className="rounded-full border border-[rgb(var(--border))] bg-[rgb(var(--card))] px-3 py-1.5 text-xs hover:bg-white/5"
                       type="button"
                       onClick={openEditUpdate}
                     >
                       Edit
                     </button>
                     <button
-                      className="rounded-full border border-red-300/60 bg-[rgb(var(--card))] px-3 py-1.5 text-xs text-red-700 hover:bg-red-50 dark:border-red-900/50 dark:text-red-300 dark:hover:bg-red-950/30"
+                      className="rounded-full border border-red-900/50 bg-[rgb(var(--card))] px-3 py-1.5 text-xs text-red-300 hover:bg-red-950/30"
                       type="button"
                       onClick={deleteUpdate}
                     >
