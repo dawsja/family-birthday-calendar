@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../lib/auth";
-import { ThemeToggle } from "../components/ThemeToggle";
 import { Modal } from "../components/Modal";
 
 export default function LoginPage() {
@@ -66,7 +65,6 @@ export default function LoginPage() {
       <div className="mx-auto flex max-w-md flex-col gap-4 px-4 py-8">
         <div className="flex items-center justify-between">
           <div className="text-lg font-semibold">Family Birthday Calendar</div>
-          <ThemeToggle />
         </div>
 
         <div className="rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-4 shadow-sm">

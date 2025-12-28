@@ -27,7 +27,7 @@ export function Modal({
         <div className="flex items-center justify-between gap-3 border-b border-[rgb(var(--border))] px-4 py-3">
           <div className="text-sm font-semibold">{title}</div>
           <button
-            className="rounded-md px-2 py-1 text-sm text-[rgb(var(--muted))] hover:bg-black/5 dark:hover:bg-white/5"
+            className="rounded-md px-2 py-1 text-sm text-[rgb(var(--muted))] hover:bg-white/5"
             onClick={onClose}
             aria-label="Close dialog"
           >

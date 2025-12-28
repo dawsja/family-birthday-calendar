@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { ThemeToggle } from "../components/ThemeToggle";
 import { apiFetch } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { Modal } from "../components/Modal";
@@ -187,7 +186,7 @@ export default function AdminPage() {
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-3 py-2">
           <div className="flex items-center gap-2">
             <Link
-              className="rounded-full border border-[rgb(var(--border))] bg-[rgb(var(--card))] px-3 py-1.5 text-sm hover:bg-black/5 dark:hover:bg-white/5"
+              className="rounded-full border border-[rgb(var(--border))] bg-[rgb(var(--card))] px-3 py-1.5 text-sm hover:bg-white/5"
               to="/"
             >
               ← Calendar
@@ -195,9 +194,8 @@ export default function AdminPage() {
             <div className="text-sm font-semibold">Admin</div>
           </div>
           <div className="flex items-center gap-2">
-            <ThemeToggle />
             <button
-              className="rounded-full border border-[rgb(var(--border))] bg-[rgb(var(--card))] px-3 py-1.5 text-sm hover:bg-black/5 dark:hover:bg-white/5"
+              className="rounded-full border border-[rgb(var(--border))] bg-[rgb(var(--card))] px-3 py-1.5 text-sm hover:bg-white/5"
               onClick={() => logout()}
               type="button"
             >
@@ -280,7 +278,7 @@ export default function AdminPage() {
           <div className="mb-2 flex items-center justify-between">
             <div className="text-sm font-semibold">Users</div>
             <button
-              className="rounded-full border border-[rgb(var(--border))] bg-[rgb(var(--card))] px-3 py-1.5 text-sm hover:bg-black/5 dark:hover:bg-white/5"
+              className="rounded-full border border-[rgb(var(--border))] bg-[rgb(var(--card))] px-3 py-1.5 text-sm hover:bg-white/5"
               type="button"
               onClick={refresh}
               disabled={loading}
@@ -322,28 +320,28 @@ export default function AdminPage() {
                       <td className="py-2 pr-3 text-right">
                         <div className="flex items-center justify-end gap-2">
                           <button
-                            className="rounded-full border border-[rgb(var(--border))] bg-[rgb(var(--card))] px-3 py-1.5 text-xs hover:bg-black/5 dark:hover:bg-white/5"
+                            className="rounded-full border border-[rgb(var(--border))] bg-[rgb(var(--card))] px-3 py-1.5 text-xs hover:bg-white/5"
                             type="button"
                             onClick={() => openEdit(u)}
                           >
                             Edit
                           </button>
                           <button
-                            className="rounded-full border border-[rgb(var(--border))] bg-[rgb(var(--card))] px-3 py-1.5 text-xs hover:bg-black/5 dark:hover:bg-white/5"
+                            className="rounded-full border border-[rgb(var(--border))] bg-[rgb(var(--card))] px-3 py-1.5 text-xs hover:bg-white/5"
                             type="button"
                             onClick={() => resetSetup(u)}
                           >
                             Reset setup
                           </button>
                           <button
-                            className="rounded-full border border-[rgb(var(--border))] bg-[rgb(var(--card))] px-3 py-1.5 text-xs hover:bg-black/5 dark:hover:bg-white/5"
+                            className="rounded-full border border-[rgb(var(--border))] bg-[rgb(var(--card))] px-3 py-1.5 text-xs hover:bg-white/5"
                             type="button"
                             onClick={() => resetPassword(u.id)}
                           >
                             Reset password
                           </button>
                           <button
-                            className="rounded-full border border-red-300/60 bg-[rgb(var(--card))] px-3 py-1.5 text-xs text-red-700 hover:bg-red-50 dark:border-red-900/50 dark:text-red-300 dark:hover:bg-red-950/30"
+                            className="rounded-full border border-red-900/50 bg-[rgb(var(--card))] px-3 py-1.5 text-xs text-red-300 hover:bg-red-950/30"
                             type="button"
                             onClick={() => deleteUser(u)}
                           >
