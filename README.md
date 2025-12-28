@@ -1,4 +1,4 @@
-# Family Birthday Calendar (shared)
+# Family Calendar (shared)
 
 Secure, mobile-friendly “Google Calendar”-style web app for a family birthday calendar:
 

@@ -18,8 +18,8 @@ export default defineConfig({
         "pwa/favicon.svg"
       ],
       manifest: {
-        name: "Family Birthday Calendar",
-        short_name: "Birthdays",
+        name: "Family Calendar",
+        short_name: "Family Calendar",
         description: "Family birthday calendar",
         start_url: "/",
         scope: "/",

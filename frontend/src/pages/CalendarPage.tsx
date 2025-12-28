@@ -457,7 +457,7 @@ export default function CalendarPage() {
               F
             </div>
             <div className="min-w-0">
-              <div className="truncate text-sm font-semibold">Family Birthday Calendar</div>
+              <div className="truncate text-sm font-semibold">Family Calendar</div>
               <div className="truncate text-xs text-[rgb(var(--muted))]">{title}</div>
             </div>
           </div>
