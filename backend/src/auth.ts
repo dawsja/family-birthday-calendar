@@ -135,13 +135,17 @@ export function clearSession(sessionId: string) {
   db.prepare("DELETE FROM sessions WHERE id = ?").run(sessionId);
 }
 
-export function setSessionCookie(res: Response, sessionId: string) {
+export function setSessionCookie(res: Response, sessionId: string, expiresAt: number) {
   const env = getEnv();
+  const maxAgeMs = Math.max(0, expiresAt - Date.now());
   res.cookie(SESSION_COOKIE_NAME, sessionId, {
     httpOnly: true,
     sameSite: "strict",
     secure: env.NODE_ENV === "production",
-    path: "/"
+    path: "/",
+    // Make it persistent across browser restarts (otherwise it's a session cookie).
+    maxAge: maxAgeMs,
+    expires: new Date(expiresAt)
   });
 }
 
