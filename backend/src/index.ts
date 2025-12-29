@@ -193,7 +193,7 @@ authRouter.post("/login", loginLimiter, async (req, res) => {
   db.prepare("DELETE FROM sessions WHERE user_id = ?").run(user.id);
 
   const session = newSession(user.id);
-  setSessionCookie(res, session.id);
+  setSessionCookie(res, session.id, session.expiresAt);
 
   // "First login" onboarding:
   // - Only normal users get prompted
@@ -272,7 +272,7 @@ authRouter.post("/set-password", async (req, res) => {
   // New password => revoke old sessions and create a fresh one.
   db.prepare("DELETE FROM sessions WHERE user_id = ?").run(u.id);
   const session = newSession(u.id);
-  setSessionCookie(res, session.id);
+  setSessionCookie(res, session.id, session.expiresAt);
 
   const needsSetup = u.role === "user" && u.last_login_at == null && (!u.birthday || !u.venmo);
   const loginAt = Date.now();
